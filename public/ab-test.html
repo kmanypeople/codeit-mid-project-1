@@ -330,6 +330,8 @@ const ICON={chk:'<svg viewBox="0 0 12 12"><path d="M2 6.3l2.6 2.6L10 3.4" fill="
 
 /* ---------- survey definition (same content in A and B) ---------- */
 const SURVEY_NAME="동네 카페 이용 경험 설문";
+// Sent with every event so dashboards can separate survey versions. Change it whenever the questions change.
+const SURVEY_VERSION="cafe16";
 const SURVEY_DESC="평소 동네 카페를 어떻게 이용하는지 알려 주세요. 더 나은 동네 카페 문화를 만드는 데 참고하려고 합니다. 정답은 없으니 편하게 응답해 주세요.";
 // Copied from the live Walla form. min/max = multi-select count rule (min===max means exactly that many).
 // required:false matches Walla, where only the recommendation text and the email are optional.
@@ -364,7 +366,7 @@ const V=()=>S.order[S.idx];
    Every measurable moment calls track(). If Mixpanel is on the page (window.mixpanel), events go there.
    A React/Next.js wrapper can also listen: window.addEventListener("abtest:event", e => mixpanel.track(e.detail.name, e.detail.props)). */
 function track(name,props){
-  const p=Object.assign({ab_order:S.order.join(""),screen:window.innerWidth<=760?"mobile":"desktop"},props||{});
+  const p=Object.assign({survey_version:SURVEY_VERSION,ab_order:S.order.join(""),screen:window.innerWidth<=760?"mobile":"desktop"},props||{});
   try{ if(window.mixpanel&&typeof window.mixpanel.track==="function") window.mixpanel.track(name,p); }catch(e){}
   try{ window.dispatchEvent(new CustomEvent("abtest:event",{detail:{name:name,props:p}})); }catch(e){}
 }
@@ -626,7 +628,7 @@ function onOpt(b){
     else {
       if(ver==="B"&&q.max&&a.length>=q.max){ shake(q.id); track("ab_max_selection_exceeded",{version:ver,question:q.id}); return; }
       a.push(i);
-      if(ver==="A"&&q.max&&a.length>q.max){ renderScreen(true); refreshTasks(); shake(q.id); track("ab_max_selection_exceeded",{version:ver,question:q.id}); return; }
+      if(ver==="A"&&q.max&&a.length>q.max){ S.metrics[ver].countRuleError=true; renderScreen(true); refreshTasks(); shake(q.id); track("ab_max_selection_exceeded",{version:ver,question:q.id}); return; }
     }
   }
   renderScreen(true); refreshTasks();
@@ -666,6 +668,7 @@ function scrollToQ(id,smooth){
 function failed(errs){
   track("ab_validation_error",{version:V(),page:S.page,questions:errs.map(e=>e.q),kinds:errs.map(e=>e.kind),error_count:errs.length});
   const ver=V(); S.metrics[ver].errorEvents=(S.metrics[ver].errorEvents||0)+1;
+  if(errs.some(e=>e.kind==="min"||e.kind==="max")) S.metrics[ver].countRuleError=true;
   if(ver==="A"){ S.toast=true; renderScreen(true); clearTimeout(failed.t); failed.t=setTimeout(()=>{ if(S.toast){S.toast=false;const t=document.querySelector(".A .toast"); if(t) t.remove();} },6000); }
   else { S.errIdx=0; renderScreen(true); requestAnimationFrame(()=>scrollToQ(errs[0].q,true)); }
 }
@@ -685,8 +688,8 @@ function submit(){
     S.submitting=false; S.submittedAt=new Date();
     const m=S.metrics[ver]; m.ms=Math.round(performance.now()-(m.t0||performance.now()));
     // multi-select questions: final pick count and how often an option was unticked (counts only, no answer content)
-    const multi={}; Q.filter(q=>q.type==="multi").forEach(q=>{ multi[q.id+"_selected_count"]=S.ans[q.id].length; multi[q.id+"_deselect_count"]=S.desel[q.id]||0; });
-    track("ab_response_submitted",Object.assign({version:ver,position:S.idx+1,seconds:Math.round(m.ms/100)/10,error_events:m.errorEvents||0},multi));
+    const multi={}; let deselTotal=0; Q.filter(q=>q.type==="multi").forEach(q=>{ multi[q.id+"_selected_count"]=S.ans[q.id].length; multi[q.id+"_deselect_count"]=S.desel[q.id]||0; deselTotal+=S.desel[q.id]||0; });
+    track("ab_response_submitted",Object.assign({version:ver,position:S.idx+1,seconds:Math.round(m.ms/100)/10,error_events:m.errorEvents||0,count_rule_error:!!m.countRuleError,deselect_total:deselTotal},multi));
     renderScreen(); refreshTasks();
     setTimeout(()=>{ if(S.phase==="survey"&&V()===ver&&!S.metrics[ver].confirm){ S.confirmShown=true; renderScreen(); } },1600);
   },ver==="A"?700:1200);
