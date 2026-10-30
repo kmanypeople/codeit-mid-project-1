@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Mixpanel 공식 JS 스니펫 (Project Token은 공개 값. API Secret은 넣지 않음) -->
+<script type="text/javascript">
+/** @define {string} */
+var MIXPANEL_LIB_URL = 'https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js';
+
+(function(document, mixpanel) {
+    // Only stub out if this is the first time running the snippet.
+    if (!mixpanel['__SV']) {
+        var script, first_script, gen_fn, functions, i, lib_name = "mixpanel";
+        window[lib_name] = mixpanel;
+
+        mixpanel['_i'] = [];
+
+        mixpanel['init'] = function (token, config, name) {
+            // support multiple mixpanel instances
+            var target = mixpanel;
+            if (typeof(name) !== 'undefined') {
+                target = mixpanel[name] = [];
+            } else {
+                name = lib_name;
+            }
+
+            // Pass in current people object if it exists
+            target['people'] = target['people'] || [];
+            target['toString'] = function(no_stub) {
+                var str = lib_name;
+                if (name !== lib_name) {
+                    str += "." + name;
+                }
+                if (!no_stub) {
+                    str += " (stub)";
+                }
+                return str;
+            };
+            target['people']['toString'] = function() {
+                // 1 instead of true for minifying
+                return target.toString(1) + ".people (stub)";
+            };
+
+            function _set_and_defer(target, fn) {
+                var split = fn.split(".");
+                if (split.length == 2) {
+                    target = target[split[0]];
+                    fn = split[1];
+                }
+                target[fn] = function() {
+                    target.push([fn].concat(Array.prototype.slice.call(arguments, 0)));
+                };
+            }
+
+            // create shallow clone of the public mixpanel interface
+            // Note: only supports 1 additional level atm, e.g. mixpanel.people.set, not mixpanel.people.set.do_something_else.
+            functions = "disable time_event track track_pageview track_links track_forms track_with_groups add_group set_group remove_group register register_once alias unregister identify name_tag set_config reset opt_in_tracking opt_out_tracking has_opted_in_tracking has_opted_out_tracking clear_opt_in_out_tracking start_batch_senders start_session_recording stop_session_recording people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user people.remove".split(' ');
+            for (i = 0; i < functions.length; i++) {
+                _set_and_defer(target, functions[i]);
+            }
+
+            // special case for get_group(): chain method calls like mixpanel.get_group('foo', 'bar').unset('baz')
+            var group_functions = "set set_once union unset remove delete".split(' ');
+            target['get_group'] = function() {
+                var mock_group = {};
+
+                var call1_args = arguments;
+                var call1 = ['get_group'].concat(Array.prototype.slice.call(call1_args, 0));
+
+                function _set_and_defer_chained(fn_name) {
+                    mock_group[fn_name] = function() {
+                        var call2_args = arguments;
+                        var call2 = [fn_name].concat(Array.prototype.slice.call(call2_args, 0));
+                        target.push([call1, call2]);
+                    };
+                }
+                for (var i = 0; i < group_functions.length; i++) {
+                    _set_and_defer_chained(group_functions[i]);
+                }
+                return mock_group;
+            };
+
+            // register mixpanel instance
+            mixpanel['_i'].push([token, config, name]);
+        };
+
+        // Snippet version, used to fail on new features w/ old snippet
+        mixpanel['__SV'] = 1.2;
+
+        script = document.createElement("script");
+        script.type = "text/javascript";
+        script.async = true;
+
+        if (typeof MIXPANEL_CUSTOM_LIB_URL !== 'undefined') {
+            script.src = MIXPANEL_CUSTOM_LIB_URL;
+        } else if (document.location.protocol === 'file:' && MIXPANEL_LIB_URL.match(/^\/\//)) {
+            script.src = 'https:' + MIXPANEL_LIB_URL;
+        } else {
+            script.src = MIXPANEL_LIB_URL;
+        }
+
+        first_script = document.getElementsByTagName("script")[0];
+        first_script.parentNode.insertBefore(script, first_script);
+    }
+// Pass in current Mixpanel object if it exists (for ppl like Optimizely)
+})(document, window['mixpanel'] || []);
+mixpanel.init("5d520e0122e8f6a5fe1c4006d8d313a2", {
+    autocapture: false,
+    track_pageview: false,
+    persistence: "localStorage"
+});
+</script>
+<title>응답 화면 A/B 테스트</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* Layout: a slim test bar on top, the survey fills the rest of the viewport like the live Walla form (centered 848px column, fixed light palette in both themes). */
+:root{
+  --bg:#EEF1F5; --surface:#FFFFFF; --fg:#1B2230; --muted:#5D6676; --line:#D9DEE6; --accent:#007EFF; --accent-soft:#E6F1FF; --ok:#1A7F37; --ok-soft:#E3F4E8;
+  --font:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  /* survey UI palette — deliberately light in both themes, like the real form */
+  --p-bg:#FFFFFF; --p-fg:#1F2329; --p-muted:#6B7280; --p-faint:#A3A9B3; --p-line:#E3E6EB; --p-soft:#F5F6F8; --p-soft2:#EDEFF2;
+  --p-blue:#007EFF; --p-blue-track:#CFE4FF; --p-red:#E5484D; --p-red-soft:#FFF1F1; --p-dark:#1F2329; --p-status:#F5F6F8;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12151B; --surface:#1B2029; --fg:#E7EAF0; --muted:#9AA3B2; --line:#2C3340; --accent:#4DA3FF; --accent-soft:#1A2C45; --ok:#4CC38A; --ok-soft:#16301F; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12151B; --surface:#1B2029; --fg:#E7EAF0; --muted:#9AA3B2; --line:#2C3340; --accent:#4DA3FF; --accent-soft:#1A2C45; --ok:#4CC38A; --ok-soft:#16301F; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+.topbar{flex:none;display:flex;align-items:center;gap:10px;min-height:52px;padding:8px max(16px,env(safe-area-inset-right,0px)) 8px max(16px,env(safe-area-inset-left,0px));background:var(--surface);border-bottom:1px solid var(--line);position:relative;z-index:30}
+.topbar h1{font-size:15px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .step{font-size:12.5px;color:var(--muted);white-space:nowrap}
+.topbar .spacer{flex:1}
+.tbtn{border:1.5px solid var(--line);background:var(--surface);color:var(--fg);border-radius:10px;padding:7px 12px;font-size:13px;font-weight:700;white-space:nowrap}
+.tbtn[aria-expanded="true"]{border-color:var(--accent);color:var(--accent)}
+.linkbtn{background:none;border:0;color:var(--accent);font-size:13px;font-weight:700;padding:4px 0;white-space:nowrap}
+.taskpop{position:absolute;top:52px;right:max(16px,env(safe-area-inset-right,0px));width:min(360px,calc(100% - 32px));z-index:35;box-shadow:0 12px 32px -12px rgba(0,0,0,.3)}
+.stage{flex:1;min-height:0;position:relative;display:flex}
+.stage.center{overflow-y:auto;padding:32px 16px 40px;justify-content:center;align-items:flex-start}
+.stage.center>.card{margin:auto 0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+.card h2{font-size:15px;margin:0 0 10px}
+.tasks{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.tasks li{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;font-size:14px;line-height:1.5}
+.tasks .chk{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--line);display:grid;place-items:center;margin-top:1px}
+.tasks .chk svg{width:12px;height:12px;stroke:#fff}
+.tasks li.done .chk{background:var(--ok);border-color:var(--ok)}
+.tasks li.done span{color:var(--muted)}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--accent-soft);color:var(--accent)}
+.note{font-size:12.5px;color:var(--muted);line-height:1.55;margin:0}
+/* docked task card: only where the survey column leaves room at the side */
+.dock{display:none;position:absolute;left:24px;top:24px;width:248px;z-index:12}
+.dock .note{margin-top:12px}
+@media (min-width:1400px){ .dock{display:block} #taskBtn{display:none} .taskpop{display:none} }
+/* survey screen: full viewport, Walla-like centered column */
+.screen{position:relative;flex:1;min-width:0;background:var(--p-bg);color:var(--p-fg);display:flex;flex-direction:column;font-size:15px;overflow:hidden}
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;position:relative;-webkit-overflow-scrolling:touch;scroll-behavior:auto}
+.scroll.smooth{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){.scroll.smooth{scroll-behavior:auto}}
+@media (max-width:560px){ .topbar h1{font-size:14px} .topbar .step{display:none} }
+/* shell overlays over the survey screen: bottom sheet on mobile, centered dialog on wide screens */
+.sheet{position:absolute;inset:0;background:rgba(15,18,24,.45);display:flex;align-items:flex-end;z-index:40}
+.sheet .inner{background:var(--surface);color:var(--fg);width:100%;border-radius:20px 20px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom,0px));display:grid;gap:14px;border-top:3px dashed var(--accent)}
+.sheet h3{margin:0;font-size:18px}
+.sheet .lbl{font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.02em}
+.btn{border:0;border-radius:12px;padding:14px 16px;font-size:15px;font-weight:700;background:var(--accent);color:#fff;width:100%}
+.btn.ghost{background:transparent;color:var(--fg);border:1.5px solid var(--line)}
+.btn:disabled{opacity:.5;cursor:default}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (min-width:768px){ .sheet{align-items:center;justify-content:center;padding:24px} .sheet .inner{max-width:480px;border-radius:20px;padding:26px 24px} }
+/* ---------- survey common ---------- */
+.sv{max-width:888px;margin:0 auto;padding:28px 20px 140px}
+.sv h2{font-size:20px;margin:6px 0 8px}
+.sv .desc{font-size:14px;color:var(--p-muted);line-height:1.6;margin:0 0 8px}
+.q{margin-top:30px;scroll-margin-top:16px}
+.q .title{font-size:17px;font-weight:700;line-height:1.45;margin:0}
+.opts{display:grid;gap:8px;margin-top:16px}
+.opt{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:0;background:none;color:var(--p-fg);font-size:15px;padding:0}
+.inp{width:100%;font:inherit;font-size:15px;padding:14px;border-radius:10px;color:var(--p-fg)}
+.q.shake{animation:qshake .3s linear .2s 1}
+@keyframes qshake{0%{transform:translateX(0)}16%{transform:translateX(-4px)}36%{transform:translateX(4px)}56%{transform:translateX(-4px)}76%{transform:translateX(4px)}100%{transform:translateX(0)}}
+@media (min-width:768px){ .sv{padding-top:48px} .sv h2{font-size:24px} .sv .desc{font-size:15px} .q .title{font-size:20px} .opt,.inp{font-size:16px} }
+/* ---------- A (current) ---------- */
+.A{--p-blue:#2670FF;--p-blue-track:rgba(38,112,255,.2)}
+.A .bar{height:6px;background:var(--p-blue-track);flex:none}
+.A .bar b{display:block;height:100%;background:var(--p-blue);transition:width .3s}
+.A .req{font-size:12px;color:var(--p-blue);font-weight:500;margin-bottom:4px}
+.A .err{font-size:12px;color:var(--p-red);display:flex;gap:4px;align-items:center;margin-bottom:4px}
+.A .err::before{content:"!";width:13px;height:13px;border-radius:50%;background:var(--p-red);color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center}
+.A .maxtag{justify-self:end;font-size:11.5px;font-weight:700;border:1.5px solid var(--p-fg);border-radius:4px;padding:1px 5px;margin-bottom:-2px}
+.A .opt{background:var(--p-soft);border-radius:12px;padding:14px 14px;justify-content:space-between}
+.A .dim,.B .dim{opacity:.4;pointer-events:none}
+.A .ring{width:22px;height:22px;border-radius:50%;border:5px solid #D3D6DB;background:#fff;flex:none}
+.A .opt[aria-checked="true"] .ring{border-color:var(--p-blue)}
+.A .cc{width:22px;height:22px;border-radius:50%;border:1.5px solid #D3D6DB;flex:none;display:grid;place-items:center}
+.A .cc svg{width:12px;height:12px;stroke:#D3D6DB}
+.A .opt[aria-checked="true"] .cc{background:var(--p-blue);border-color:var(--p-blue)}
+.A .opt[aria-checked="true"] .cc svg{stroke:#fff}
+.A .inp{border:0;background:var(--p-soft)}
+.A .next{display:flex;justify-content:flex-end;margin-top:30px}
+.A .nextbtn{border:0;background:var(--p-blue);color:#fff;font-weight:700;font-size:15px;height:48px;padding:0 20px;border-radius:16px}
+.A .submitbtn{border:0;background:var(--p-blue);color:#fff;font-weight:700;font-size:16px;padding:15px;border-radius:14px;width:100%;margin-top:34px}
+.fnav{right:max(16px,calc((100% - 848px) / 2 - 24px))}
+.A .fnav{position:absolute;bottom:16px;display:flex;gap:8px;z-index:10}
+.A .fnav button{width:40px;height:40px;border-radius:16px;border:0;background:var(--p-blue);color:#fff;display:grid;place-items:center}
+.A .fnav button:disabled{opacity:.35}
+.A .fnav svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2.6}
+.A .toast{position:absolute;left:12px;right:12px;top:18px;background:#fff;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.14);border-left:4px solid var(--p-red);display:flex;align-items:center;gap:10px;padding:10px 10px 10px 12px;z-index:20}
+@media (min-width:768px){ .A .toast{left:50%;right:auto;width:440px;transform:translateX(-50%)} }
+.A .toast .ic{width:20px;height:20px;border-radius:50%;background:var(--p-red);color:#fff;font-weight:700;font-size:12px;display:grid;place-items:center;flex:none}
+.A .toast b{display:block;font-size:13px}
+.A .toast small{display:block;font-size:11.5px;color:var(--p-muted)}
+.A .toast button{margin-left:auto;border:0;background:var(--p-soft2);border-radius:8px;font-size:11.5px;font-weight:700;color:var(--p-muted);padding:7px 9px;flex:none}
+.A .done{height:100%;display:grid;place-content:center;justify-items:center;gap:18px;padding:30px;text-align:center}
+.A .done .ck{width:72px;height:72px;border-radius:50%;background:var(--p-blue);display:grid;place-items:center}
+.A .done .ck svg{width:34px;height:34px;stroke:#fff;fill:none;stroke-width:4}
+.A .done p{font-size:19px;font-weight:700;margin:0;line-height:1.4}
+/* ---------- B (improved) ---------- */
+.B .hdr{flex:none;background:var(--p-bg);border-bottom:1px solid var(--p-line);padding:12px 20px 14px;z-index:5}
+.B .hdr .hin{max-width:848px;margin:0 auto}
+.B .hdr .top{display:flex;justify-content:space-between;font-size:12px;color:var(--p-muted)}
+.B .hdr .top b{color:var(--p-fg);font-size:14px}
+.B .hdr .track{height:8px;border-radius:4px;background:var(--p-soft2);margin-top:8px;overflow:hidden}
+.B .hdr .track b{display:block;height:100%;background:var(--p-blue);border-radius:4px;transition:width .3s}
+.B .q{border:1.5px solid transparent;border-radius:14px;padding:12px;margin:22px -12px 0}
+.B .q.bad{border-color:#F2A9A9;background:#FFF2F2}
+.B .req{font-size:12px;font-weight:500;color:var(--p-blue);margin-bottom:3px}
+.B .title{display:block}
+.B .chip{display:inline-block;vertical-align:2px;margin-left:6px;font-size:11.5px;font-weight:700;background:var(--p-soft2);color:var(--p-fg);border-radius:99px;padding:3px 9px;white-space:nowrap;line-height:1.4}
+.B .err{font-size:13.5px;font-weight:500;color:var(--p-red);display:flex;gap:5px;align-items:center;margin-top:6px}
+.B .err::before{content:"!";width:15px;height:15px;border-radius:50%;background:var(--p-red);color:#fff;font-size:10.5px;font-weight:700;display:grid;place-items:center;flex:none}
+.B .opts{margin-top:14px}
+.B .opt{border:0;border-radius:12px;padding:13px 14px;background:var(--p-soft)}
+.B .opt[aria-checked="true"]{background:#EAF3FF}
+.B .opt[aria-disabled="true"]{opacity:.45;cursor:default}
+.B .radio{width:22px;height:22px;border-radius:50%;border:5px solid #D3D6DB;background:#fff;flex:none}
+.B .opt[aria-checked="true"] .radio{border-color:var(--p-blue)}
+.B .box{width:20px;height:20px;border-radius:4px;border:1.5px solid #B4BAC3;background:#fff;flex:none;display:grid;place-items:center}
+.B .box svg{width:12px;height:12px;stroke:#fff;fill:none;stroke-width:3;opacity:0}
+.B .opt[aria-checked="true"] .box{background:var(--p-blue);border-color:var(--p-blue)}
+.B .opt[aria-checked="true"] .box svg{opacity:1}
+.B .inp{border:1.5px solid var(--p-line);background:#fff;margin-top:14px}
+.B .inp.bad{border-color:var(--p-red);border-width:2px}
+.B .next{display:flex;justify-content:flex-end;margin-top:30px}
+.B .nextbtn{border:0;background:var(--p-blue);color:#fff;font-weight:700;font-size:15px;padding:13px 22px;border-radius:12px}
+.B .lastnote{display:flex;gap:6px;justify-content:center;align-items:center;font-size:13px;color:var(--p-fg);margin-top:34px}
+.B .lastnote span{width:15px;height:15px;border-radius:50%;border:1.5px solid var(--p-fg);font-size:10px;font-weight:700;display:grid;place-items:center}
+.B .submitbtn{border:0;background:var(--p-blue);color:#fff;font-weight:700;font-size:16px;padding:15px;border-radius:12px;width:100%;margin-top:10px;display:flex;gap:10px;justify-content:center;align-items:center}
+.B .submitbtn.muted{background:#A9C8F7}
+.B .submitbtn.loading{background:#A9C8F7}
+.B .spin{width:18px;height:18px;border-radius:50%;border:3px solid rgba(255,255,255,.45);border-top-color:#fff;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.B .spin{animation-duration:3s}}
+.B .relink{display:block;margin:14px auto 0;border:0;background:none;color:var(--p-muted);font-size:13.5px;text-decoration:underline;text-underline-offset:3px}
+.B .hdr.dim{opacity:.4}
+.B .fnav{position:absolute;bottom:16px;display:flex;gap:8px;z-index:10;transition:opacity .2s,transform .2s}
+.B .fnav.hide{opacity:0;transform:translateY(8px);pointer-events:none}
+.B .fnav button{width:44px;height:44px;border-radius:12px;border:0;background:var(--p-blue);color:#fff;display:grid;place-items:center}
+.B .fnav button:disabled{opacity:.35}
+.B .fnav svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.4}
+.B .snack{position:sticky;bottom:12px;margin-top:16px;background:#fff;border:1.5px solid #F2A9A9;border-radius:12px;padding:13px 14px;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;z-index:4;box-shadow:0 4px 14px rgba(0,0,0,.06)}
+.B .snack .ic{width:18px;height:18px;border-radius:50%;background:var(--p-red);color:#fff;font-size:11.5px;display:grid;place-items:center;flex:none}
+.B .snack button{margin-left:auto;border:0;background:none;font-weight:500;font-size:13px;color:var(--p-fg);text-decoration:underline;text-underline-offset:3px;flex:none}
+.B .done{padding:56px 20px 24px;display:flex;flex-direction:column;min-height:100%;max-width:520px;margin:0 auto}
+@media (min-width:768px){ .B .done{min-height:0;padding-top:72px} .B .done .acts{margin-top:32px} }
+.B .done .ck{width:80px;height:80px;border-radius:50%;background:var(--p-blue);display:grid;place-items:center;margin:24px auto 0}
+.B .done .ck svg{width:36px;height:36px;stroke:#fff;fill:none;stroke-width:3.5}
+.B .done h2{text-align:center;font-size:22px;margin:24px 0 20px}
+.B .done dl{background:#F1F4F8;border-radius:12px;padding:14px 16px;margin:0;display:grid;grid-template-columns:auto 1fr;gap:8px 12px;font-size:14.5px}
+.B .done dt{color:var(--p-muted)}
+.B .done dd{margin:0;text-align:right;font-weight:500;font-variant-numeric:tabular-nums}
+.B .done .acts{margin-top:auto;display:grid;gap:10px;padding-top:28px}
+.B .done .acts button{border-radius:12px;padding:15px;font-size:15px;font-weight:700}
+.B .done .close{border:0;background:var(--p-blue);color:#fff}
+.B .done .home{border:1.5px solid #9CA3AF;background:#fff;color:var(--p-fg)}
+.B .done .hint{text-align:center;font-size:12px;color:var(--p-muted);min-height:18px;margin:4px 0 0}
+/* ---------- shell screens ---------- */
+.shellcard{width:460px;max-width:100%;flex:none}
+.shellcard h2{font-size:21px;margin:0 0 8px;text-wrap:balance}
+.shellcard p{font-size:14.5px;line-height:1.65;color:var(--muted);margin:0 0 10px}
+.pick{display:grid;gap:10px;margin:16px 0}
+.pick button{border:1.5px solid var(--line);background:var(--surface);color:var(--fg);border-radius:12px;padding:15px 16px;font-size:15px;text-align:left;font-weight:500}
+.pick button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);font-weight:700}
+.shellcard textarea{width:100%;min-height:84px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);color:var(--fg);font:inherit;font-size:14.5px;padding:12px;resize:vertical}
+.status{font-size:13.5px;border-radius:10px;padding:12px 14px;margin-top:12px;line-height:1.55}
+.status.ok{background:var(--ok-soft);color:var(--ok)}
+.status.warn{background:var(--accent-soft);color:var(--fg)}
+.code{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;white-space:pre-wrap;word-break:break-all;margin-top:8px;color:var(--fg)}
+.results{flex:1;min-height:0;overflow-y:auto;padding:20px 16px 40px}
+.results>.card{max-width:1040px;margin:0 auto}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0 16px}
+.stat{border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.stat b{display:block;font-size:24px;font-variant-numeric:tabular-nums}
+.stat span{font-size:12.5px;color:var(--muted)}
+.tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{padding:9px 11px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{color:var(--muted);font-weight:700;font-size:12px}
+td.r{white-space:normal;min-width:180px}
+</style>
+
+<div class="app" id="app">
+  <header class="topbar">
+    <h1>응답 화면 A/B 테스트</h1>
+    <span class="step" id="stepLabel"></span>
+    <span class="spacer"></span>
+    <button class="tbtn" id="taskBtn" hidden aria-expanded="false" aria-controls="taskPop">과업 보기</button>
+  </header>
+  <div class="taskpop card" id="taskPop" hidden></div>
+  <main class="stage" id="stage"></main>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const ICON={chk:'<svg viewBox="0 0 12 12"><path d="M2 6.3l2.6 2.6L10 3.4" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2"/></svg>',
+  right:'<svg viewBox="0 0 16 16"><path d="M6 3l5 5-5 5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  left:'<svg viewBox="0 0 16 16"><path d="M10 3L5 8l5 5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  big:'<svg viewBox="0 0 34 34"><path d="M7 17.5l7 7L27 11" stroke-linecap="round" stroke-linejoin="round"/></svg>'};
+
+/* ---------- survey definition (same content in A and B) ---------- */
+const SURVEY_NAME="동네 카페 이용 설문";
+const Q=[
+ {id:"q1",page:1,type:"single",title:"동네 카페에 얼마나 자주 가나요?",opts:["거의 매일","주 3~4회","주 1~2회","월 2~3회","월 1회 이하"]},
+ {id:"q2",page:1,type:"multi",max:2,title:"그날 카페에 간 목적과 가장 가까운 것을 골라 주세요.",opts:["혼자 업무나 공부를 하려고","음료만 포장하려고","친구나 가족과 대화하며 쉬려고","업무 미팅이나 모임을 하려고","기타"]},
+ {id:"q3",page:1,type:"single",title:"가장 자주 가는 동네 카페는 어떤 곳인가요?",opts:["개인이 운영하는 카페","프랜차이즈 카페","둘 다 비슷하게 간다"]},
+ {id:"q4",page:2,type:"multi",title:"그날 주문한 메뉴를 모두 골라 주세요.",opts:["아메리카노","라떼 등 우유가 들어간 커피","차","에이드·주스","디저트"]},
+ {id:"q5",page:2,type:"email",title:"결과 안내를 받을 이메일을 입력해 주세요.",ph:"이메일 주소를 입력하세요."},
+];
+const EMAIL_RE=/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const PREFILL="";
+
+/* ---------- state ---------- */
+const S={phase:"intro",order:["A","B"],idx:0,page:1,ans:null,attempted:{},errIdx:0,toast:false,submitting:false,submittedAt:null,
+  metrics:{A:{},B:{}},pref:null,reason:"",save:null,confirmShown:false,taskOpen:false};
+function freshAnswers(){return {q1:null,q2:[],q3:null,q4:[],q5:PREFILL};}
+const V=()=>S.order[S.idx];
+
+/* ---------- event hook (handoff) ----------
+   Every measurable moment calls track(). If Mixpanel is on the page (window.mixpanel), events go there.
+   A React/Next.js wrapper can also listen: window.addEventListener("abtest:event", e => mixpanel.track(e.detail.name, e.detail.props)). */
+function track(name,props){
+  const p=Object.assign({ab_order:S.order.join(""),screen:window.innerWidth<=760?"mobile":"desktop"},props||{});
+  try{ if(window.mixpanel&&typeof window.mixpanel.track==="function") window.mixpanel.track(name,p); }catch(e){}
+  try{ window.dispatchEvent(new CustomEvent("abtest:event",{detail:{name:name,props:p}})); }catch(e){}
+}
+
+/* ---------- validation ---------- */
+function errorsFor(page,ver){
+  const out=[];
+  for(const q of Q.filter(q=>q.page===page)){
+    const a=S.ans[q.id];
+    if(q.type==="single"&&a==null) out.push({q:q.id,kind:"required"});
+    if(q.type==="multi"){
+      if(!a.length) out.push({q:q.id,kind:"required"});
+      else if(q.max&&a.length>q.max) out.push({q:q.id,kind:"max"});
+    }
+    if(q.type==="email"){
+      const v=(a||"").trim();
+      if(!v) out.push({q:q.id,kind:"required"});
+      else if(!EMAIL_RE.test(v)) out.push({q:q.id,kind:"email"});
+    }
+  }
+  return out;
+}
+function msg(ver,q,kind){
+  if(ver==="A"){
+    // Walla's own Korean strings (validation.maxSelection / invalidEmail / fieldRequired / minOneOption)
+    if(kind==="max") return "최대 선택 항목을 초과했습니다.";
+    if(q.type==="email") return kind==="email"?"올바른 이메일 주소를 입력해주세요.":"이 문항을 채워주세요.";
+    return "최소 1개 옵션을 선택해주세요.";
+  }
+  if(q.type==="email") return kind==="email"?"올바른 이메일 형식이 아니에요.":"필수 문항이에요. 이메일을 입력해 주세요.";
+  if(q.type==="multi") return "필수 문항이에요. 하나 이상 선택해 주세요.";
+  return "필수 문항이에요. 하나를 선택해 주세요.";
+}
+const answeredCount=()=>Q.filter(q=>{const a=S.ans[q.id];return q.type==="email"?EMAIL_RE.test((a||"").trim()):(Array.isArray(a)?a.length>0:a!=null);}).length;
+
+/* ---------- tasks ---------- */
+const TASKS=[
+ "1페이지: 1번과 3번에 답하세요.",
+ "1페이지: 2번 문항에서 카페에 간 목적을 2개 고르세요.",
+ "2페이지: 아무것도 입력하지 말고 바로 제출 버튼을 누르세요. 문제가 생기면 고쳐서 제출하세요.",
+ "제출이 완료됐는지 확인하세요."];
+function taskDone(){
+  if(!S.ans) return [false,false,false,false];
+  const m=S.metrics[V()]||{};
+  return [S.ans.q1!=null&&S.ans.q3!=null, S.ans.q2.length===2, !!S.submittedAt, !!m.confirm];
+}
+function taskListHTML(){
+  const d=S.phase==="survey"?taskDone():[0,0,0,0];
+  return '<ol class="tasks">'+TASKS.map((t,i)=>'<li class="'+(d[i]?"done":"")+'"><span class="chk" aria-hidden="true">'+(d[i]?ICON.chk:"")+'</span><span>'+esc(t)+'</span></li>').join("")+'</ol>';
+}
+
+/* ---------- shell render ---------- */
+function stepText(){
+  if(S.phase==="intro") return "시작 전";
+  if(S.phase==="final"||S.phase==="thanks") return "마지막 질문";
+  return "버전 "+(S.idx+1)+" / 2";
+}
+function render(){
+  $("#stepLabel").textContent=stepText();
+  const stage=$("#stage"); const tb=$("#taskBtn"); const tp=$("#taskPop");
+  const inSurvey=S.phase==="survey";
+  tb.hidden=!inSurvey; if(!inSurvey) S.taskOpen=false;
+  tb.setAttribute("aria-expanded",String(S.taskOpen)); tp.hidden=!S.taskOpen;
+  tp.innerHTML=inSurvey?'<h2>버전 '+(S.idx+1)+' / 2 과업</h2>'+taskListHTML():"";
+  if(S.phase==="intro"){ stage.className="stage center"; stage.innerHTML=introHTML(); bindIntro(); return; }
+  if(S.phase==="final"||S.phase==="thanks"){ stage.className="stage center"; stage.innerHTML=finalHTML(); bindFinal(); return; }
+  // survey stage: the form fills the viewport; tasks sit in a docked card (wide) or the top-bar popover
+  stage.className="stage";
+  stage.innerHTML='<div class="screen '+V()+'" id="screen"></div><aside class="dock card"><h2>버전 '+(S.idx+1)+' / 2 과업</h2>'+taskListHTML()+'<p class="note">두 버전 모두 같은 설문이에요. 입력한 답과 이메일은 저장되지 않고, 마지막 질문의 답만 저장돼요.</p></aside>';
+  renderScreen();
+}
+function refreshTasks(){
+  document.querySelectorAll(".tasks").forEach(el=>{el.outerHTML=taskListHTML();});
+}
+
+/* ---------- intro ---------- */
+function introHTML(){
+  return '<div class="card shellcard"><span class="tag">사용성 테스트</span><h2 style="margin-top:12px">두 가지 화면으로 같은 설문에 응답해 주세요</h2>'+
+  '<p>짧은 설문(2페이지, 5문항)에 두 번 응답해요. 화면 모양만 다르고 질문은 같아요. 각 버전을 시작하기 전에 해야 할 과업을 알려드려요.</p>'+
+  '<p>설문에 입력한 답과 이메일은 저장되지 않아요. 마지막에 "어떤 버전이 더 사용하기 쉬웠나요?"에 대한 답과 걸린 시간만 저장돼요.</p>'+
+  '<button class="btn" id="startBtn" style="margin-top:8px">테스트 시작하기</button></div>';
+}
+function bindIntro(){ $("#startBtn").onclick=()=>{ S.order=Math.random()<0.5?["A","B"]:["B","A"]; S.idx=0; track("ab_test_started"); startVersion(); }; }
+function startVersion(){
+  S.phase="survey"; S.page=1; S.ans=freshAnswers(); S.attempted={}; S.toast=false; S.submitting=false; S.submittedAt=null; S.errIdx=0; S.confirmShown=false;
+  S.metrics[V()]={errorEvents:0}; S.brief=true; render();
+}
+
+/* ---------- survey screen ---------- */
+let scrollEl=null;
+function renderScreen(keep){
+  const sc=$("#screen"); if(!sc) return;
+  const prevTop=keep&&scrollEl?scrollEl.scrollTop:0;
+  const ver=V();
+  let h='';
+  if(S.submittedAt&&!S.submitting){
+    h+='<div class="scroll" id="scroll">'+(ver==="A"?doneA():doneB())+'</div>';
+  } else if(ver==="A"){
+    h+='<div class="bar"><b style="width:'+(S.page===1?40:85)+'%"></b></div><div class="scroll" id="scroll">'+pageHTML("A")+'</div>';
+    h+='<div class="fnav">'+(S.page===1?'<button id="fNext" aria-label="다음 페이지">'+ICON.right+'</button>':'<button id="fPrev" aria-label="이전 페이지">'+ICON.left+'</button>')+'</div>';
+    if(S.toast) h+='<div class="toast" role="alert"><span class="ic">!</span><div><b>유효하지 않은 입력이 있습니다.</b><small>문제가 있는 필드를 확인하세요</small></div><button id="goField">이동하기</button></div>';
+  } else {
+    const n=answeredCount();
+    h+='<div class="hdr'+(S.submitting?" dim":"")+'"><div class="hin"><div class="top"><span>진행률</span><b>'+n+' / '+Q.length+'</b></div><div class="track"><b style="width:'+(n/Q.length*100)+'%"></b></div></div></div>';
+    h+='<div class="scroll" id="scroll">'+pageHTML("B")+'</div>';
+    if(S.page===1) h+='<div class="fnav" id="fnavB"><button id="fPrev" aria-label="이전 페이지" disabled>'+ICON.left+'</button><button id="fNext" aria-label="다음 페이지">'+ICON.right+'</button></div>';
+  }
+  if(S.brief) h+=briefHTML();
+  if(S.submittedAt&&!S.submitting&&S.confirmShown&&!S.metrics[ver].confirm) h+=confirmHTML();
+  sc.innerHTML=h;
+  scrollEl=$("#scroll");
+  if(keep) scrollEl.scrollTop=prevTop;
+  bindScreen();
+  updateFab();
+}
+function briefHTML(){
+  return '<div class="sheet"><div class="inner"><span class="lbl">테스트 안내 · 버전 '+(S.idx+1)+' / 2</span><h3>'+(S.idx===0?"이 화면에서 설문에 응답해 주세요":"이번에는 다른 화면으로 같은 설문에 응답해 주세요")+'</h3>'+taskListHTML()+'<button class="btn" id="briefGo">시작하기</button></div></div>';
+}
+function confirmHTML(){
+  return '<div class="sheet"><div class="inner"><span class="lbl">테스트 질문 · 과업 4</span><h3>방금 응답이 제출됐나요?</h3><div class="row2"><button class="btn" data-conf="yes">네, 제출됐어요</button><button class="btn ghost" data-conf="unsure">잘 모르겠어요</button></div></div></div>';
+}
+function qErr(id){
+  const q=Q.find(x=>x.id===id);
+  if(V()==="A"&&q.max&&S.ans[id].length>q.max) return {q:id,kind:"max"};
+  if(!S.attempted[S.page]) return null; return errorsFor(S.page,V()).find(e=>e.q===id)||null;
+}
+function shake(id){
+  const el=$("#Q-"+id); if(!el) return;
+  el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake");
+  el.addEventListener("animationend",()=>el.classList.remove("shake"),{once:true});
+}
+function pageHTML(ver){
+  let h='<div class="sv" id="sv">';
+  if(S.page===1) h+='<h2>'+SURVEY_NAME+'</h2><p class="desc">평소 동네 카페를 어떻게 이용하는지 알려 주세요. 정답은 없으니 편하게 응답해 주세요.</p>';
+  else h+='<h2>'+SURVEY_NAME+'</h2>';
+  const qs=Q.filter(q=>q.page===S.page);
+  qs.forEach(q=>{ h+=ver==="A"?qA(q):qB(q); });
+  if(ver==="A"){
+    h+=S.page===1?'<div class="next"><button class="nextbtn" id="nextBtn">Next →</button></div>':'<button class="submitbtn" id="submitBtn" '+(S.submitting?"disabled":"")+'>'+(S.submitting?"…":"응답 제출")+'</button>';
+  } else {
+    if(S.page===1) h+='<div class="next"><button class="nextbtn" id="nextBtn">다음 →</button></div>';
+    else{
+      const errs=S.attempted[2]?errorsFor(2,"B"):[];
+      if(errs.length>1){
+        h+='<div class="snack" role="status"><span class="ic">!</span><span>확인이 필요한 문항 '+errs.length+'개</span><button id="nextErr">다음 문항 ›</button></div>';
+      }
+      h+='<p class="lastnote'+(S.submitting?" dim":"")+'"><span>!</span>제출한 응답은 수정할 수 없어요.</p>';
+      h+='<button class="submitbtn'+(S.submitting?" loading":(errs.length?" muted":""))+'" id="submitBtn" '+(S.submitting?"disabled":"")+'>'+(S.submitting?'<span class="spin"></span>응답을 보내는 중이에요…':"응답 제출하기")+'</button>';
+    }
+  }
+  return h+'</div>';
+}
+function qA(q){
+  const e=qErr(q.id); const a=S.ans[q.id];
+  let h='<div class="q'+(S.submitting?" dim":"")+'" id="Q-'+q.id+'">';
+  h+=(e?'<div class="err">'+esc(msg("A",q,e.kind))+'</div>':'<div class="req">* 필수 입력</div>')+'<p class="title">'+esc(q.title)+'</p>';
+  if(q.type==="email"){
+    h+='<input class="inp" id="email" type="email" inputmode="email" autocomplete="off" placeholder="'+q.ph+'" value="'+esc(a)+'" style="margin-top:16px">';
+  } else {
+    h+='<div class="opts" role="'+(q.type==="single"?"radiogroup":"group")+'">';
+    q.opts.forEach((o,i)=>{
+      const on=q.type==="single"?a===i:a.includes(i);
+      h+='<button class="opt" role="'+(q.type==="single"?"radio":"checkbox")+'" aria-checked="'+on+'" data-q="'+q.id+'" data-i="'+i+'"><span>'+esc(o)+'</span>'+(q.type==="single"?'<span class="ring"></span>':'<span class="cc">'+ICON.chk+'</span>')+'</button>';
+    });
+    h+='</div>';
+  }
+  return h+'</div>';
+}
+function qB(q){
+  const e=qErr(q.id); const a=S.ans[q.id];
+  let h='<div class="q'+(e?" bad":"")+(S.submitting?" dim":"")+'" id="Q-'+q.id+'"><div class="req">*필수 입력</div><p class="title">'+esc(q.title)+(q.type==="multi"?'<span class="chip">'+(q.max?"최대 "+q.max+"개 선택":"복수 선택")+'</span>':"")+'</p>';
+  h+='<div class="errslot">'+(e?'<div class="err" role="alert">'+esc(msg("B",q,e.kind))+'</div>':"")+'</div>';
+  if(q.type==="email"){
+    h+='<input class="inp'+(e?" bad":"")+'" id="email" type="email" inputmode="email" autocomplete="off" placeholder="'+q.ph+'" value="'+esc(a)+'">';
+  } else {
+    const full=q.max&&a.length>=q.max;
+    h+='<div class="opts" role="'+(q.type==="single"?"radiogroup":"group")+'">';
+    q.opts.forEach((o,i)=>{
+      const on=q.type==="single"?a===i:a.includes(i);
+      const dis=q.type==="multi"&&full&&!on;
+      h+='<button class="opt" role="'+(q.type==="single"?"radio":"checkbox")+'" aria-checked="'+on+'"'+(dis?' aria-disabled="true"':"")+' data-q="'+q.id+'" data-i="'+i+'">'+(q.type==="single"?'<span class="radio"></span>':'<span class="box">'+ICON.chk+'</span>')+'<span>'+esc(o)+'</span></button>';
+    });
+    h+='</div>';
+  }
+  return h+'</div>';
+}
+function doneA(){ return '<div class="done"><div class="ck">'+ICON.big+'</div><p>Your response has been<br>submitted successfully.</p></div>'; }
+function fmtTime(d){ const h=d.getHours(),m=String(d.getMinutes()).padStart(2,"0"); return d.getFullYear()+"."+String(d.getMonth()+1).padStart(2,"0")+"."+String(d.getDate()).padStart(2,"0")+" "+(h<12?"오전 ":"오후 ")+((h%12)||12)+":"+m; }
+function doneB(){
+  return '<div class="done"><div class="ck">'+ICON.big+'</div><h2>응답이 제출되었어요</h2><dl><dt>설문</dt><dd>'+SURVEY_NAME+'</dd><dt>제출 시각</dt><dd>'+fmtTime(S.submittedAt)+'</dd></dl>'+
+  '<div class="acts"><button class="close" id="closeB">창 닫기</button><button class="home" id="homeB">OO 홈페이지로 이동</button><p class="hint" id="hintB"></p></div></div>';
+}
+
+/* ---------- interactions ---------- */
+function bindScreen(){
+  const sc=$("#screen");
+  const go=$("#briefGo"); if(go) go.onclick=()=>{ S.brief=false; S.metrics[V()].t0=performance.now(); track("ab_version_started",{version:V(),position:S.idx+1}); renderScreen(); };
+  sc.querySelectorAll(".opt").forEach(b=>b.addEventListener("click",()=>onOpt(b)));
+  const em=$("#email"); if(em) em.addEventListener("input",()=>{ S.ans.q5=em.value; liveRefresh(); });
+  const nx=$("#nextBtn"); if(nx) nx.onclick=goNext;
+  const fn=$("#fNext"); if(fn) fn.onclick=goNext;
+  const fp=$("#fPrev"); if(fp) fp.onclick=()=>{ if(S.page===2){S.page=1;S.toast=false;renderScreen();} };
+  const sb=$("#submitBtn"); if(sb) sb.onclick=submit;
+  const gf=$("#goField"); if(gf) gf.onclick=()=>{ S.toast=false; const e=errorsFor(S.page,"A")[0]; renderScreen(true); if(e) scrollToQ(e.q,true); };
+  const ne=$("#nextErr"); if(ne) ne.onclick=()=>{ const errs=errorsFor(S.page,"B"); S.errIdx=(S.errIdx+1)%errs.length; scrollToQ(errs[S.errIdx].q,true); };
+  const rl=$("#relink"); if(rl) rl.onclick=()=>{ S.page=1; renderScreen(); };
+  const cb=$("#closeB"); if(cb) cb.onclick=()=>{ $("#hintB").textContent="실제 서비스에서는 이 버튼으로 창이 닫혀요."; };
+  const hb=$("#homeB"); if(hb) hb.onclick=()=>{ $("#hintB").textContent="제작자가 리디렉션을 설정했을 때만 보이는 버튼이에요."; };
+  sc.querySelectorAll("[data-conf]").forEach(b=>b.onclick=()=>{ const m=S.metrics[V()]; m.confirm=b.dataset.conf; track("ab_submit_confirmed",{version:V(),position:S.idx+1,answer:m.confirm}); refreshTasks(); nextVersion(); });
+  if(scrollEl) scrollEl.addEventListener("scroll",updateFab,{passive:true});
+}
+function onOpt(b){
+  if(S.submitting) return;
+  const q=Q.find(x=>x.id===b.dataset.q); const i=+b.dataset.i; const ver=V();
+  if(q.type==="single") S.ans[q.id]=i;
+  else{
+    const a=S.ans[q.id]; const k=a.indexOf(i);
+    if(k>=0) a.splice(k,1);
+    else {
+      if(ver==="B"&&q.max&&a.length>=q.max){ shake(q.id); track("ab_max_selection_exceeded",{version:ver,question:q.id}); return; }
+      a.push(i);
+      if(ver==="A"&&q.max&&a.length>q.max){ renderScreen(true); refreshTasks(); shake(q.id); track("ab_max_selection_exceeded",{version:ver,question:q.id}); return; }
+    }
+  }
+  renderScreen(true); refreshTasks();
+}
+function liveRefresh(){
+  // patch only what depends on the email field so the input keeps focus
+  if(V()==="B"){
+    const n=answeredCount(); const hb=document.querySelector(".hdr .top b"); if(hb) hb.textContent=n+" / "+Q.length;
+    const tb=document.querySelector(".hdr .track b"); if(tb) tb.style.width=(n/Q.length*100)+"%";
+  }
+  if(!S.attempted[S.page]) return;
+  const q=Q.find(x=>x.id==="q5"); const e=qErr("q5"); const ver=V();
+  const box=$("#Q-q5"); const inp=$("#email");
+  if(ver==="B"){
+    box.classList.toggle("bad",!!e); inp.classList.toggle("bad",!!e);
+    box.querySelector(".errslot").innerHTML=e?'<div class="err" role="alert">'+esc(msg("B",q,e.kind))+'</div>':"";
+    // snackbar
+    const errs=errorsFor(2,"B"); const sn=document.querySelector(".snack");
+    if(errs.length<=1&&sn) sn.remove();
+    else if(sn) sn.querySelector("span:nth-child(2)").textContent="확인이 필요한 문항 "+errs.length+"개";
+    const sbt=$("#submitBtn"); if(sbt) sbt.classList.toggle("muted",errs.length>0);
+  } else {
+    // the error line takes the place of "* 필수 입력"
+    const first=box.firstElementChild;
+    if(e){ first.className="err"; first.textContent=msg("A",q,e.kind); }
+    else { first.className="req"; first.textContent="* 필수 입력"; }
+  }
+}
+function scrollToQ(id,smooth){
+  const el=$("#Q-"+id); if(!el||!scrollEl) return;
+  const top=el.offsetTop-12;
+  if(smooth){ scrollEl.classList.add("smooth"); scrollEl.scrollTop=top; setTimeout(()=>scrollEl&&scrollEl.classList.remove("smooth"),600); }
+  else scrollEl.scrollTop=top;
+}
+function failed(errs){
+  track("ab_validation_error",{version:V(),page:S.page,questions:errs.map(e=>e.q),kinds:errs.map(e=>e.kind),error_count:errs.length});
+  const ver=V(); S.metrics[ver].errorEvents=(S.metrics[ver].errorEvents||0)+1;
+  if(ver==="A"){ S.toast=true; renderScreen(true); clearTimeout(failed.t); failed.t=setTimeout(()=>{ if(S.toast){S.toast=false;const t=document.querySelector(".A .toast"); if(t) t.remove();} },6000); }
+  else { S.errIdx=0; renderScreen(true); requestAnimationFrame(()=>scrollToQ(errs[0].q,true)); }
+}
+function goNext(){
+  if(S.page!==1) return;
+  S.attempted[1]=true; const errs=errorsFor(1,V());
+  if(errs.length){ failed(errs); return; }
+  S.page=2; S.toast=false; track("ab_page_completed",{version:V(),page:1}); renderScreen(); if(scrollEl) scrollEl.scrollTop=0;
+}
+function submit(){
+  if(S.submitting) return;
+  S.attempted[2]=true; const errs=errorsFor(2,V());
+  if(errs.length){ failed(errs); return; }
+  S.submitting=true; S.toast=false; renderScreen(true);
+  const ver=V();
+  setTimeout(()=>{
+    S.submitting=false; S.submittedAt=new Date();
+    const m=S.metrics[ver]; m.ms=Math.round(performance.now()-(m.t0||performance.now()));
+    track("ab_response_submitted",{version:ver,position:S.idx+1,seconds:Math.round(m.ms/100)/10,error_events:m.errorEvents||0});
+    renderScreen(); refreshTasks();
+    setTimeout(()=>{ if(S.phase==="survey"&&V()===ver&&!S.metrics[ver].confirm){ S.confirmShown=true; renderScreen(); } },1600);
+  },ver==="A"?700:1200);
+}
+function updateFab(){
+  const fab=$("#fnavB"); if(!fab||!scrollEl) return;
+  const atBottom=scrollEl.scrollTop+scrollEl.clientHeight>=scrollEl.scrollHeight-24;
+  fab.classList.toggle("hide",atBottom);
+}
+function nextVersion(){
+  if(S.idx===0){ S.idx=1; startVersion(); }
+  else { S.phase="final"; render(); window.scrollTo(0,0); }
+}
+
+/* ---------- final question + save ---------- */
+function finalHTML(){
+  if(S.phase==="thanks") return thanksHTML();
+  const opts=[["first","첫 번째로 응답한 화면"],["second","두 번째로 응답한 화면"],["same","비슷했어요"]];
+  return '<div class="card shellcard"><span class="tag">마지막 질문</span><h2 style="margin-top:12px">어떤 버전이 더 사용하기 쉬웠나요?</h2>'+
+   '<div class="pick">'+opts.map(o=>'<button aria-pressed="'+(S.pref===o[0])+'" data-pref="'+o[0]+'">'+o[1]+'</button>').join("")+'</div>'+
+   '<label for="reason" class="note" style="display:block;margin-bottom:6px">이유가 있다면 적어 주세요 (선택)</label><textarea id="reason" maxlength="500" placeholder="예: 어디가 잘못됐는지 바로 보여서 편했어요">'+esc(S.reason)+'</textarea>'+
+   '<button class="btn" id="sendBtn" style="margin-top:14px" '+(S.pref?"":"disabled")+'>답변 보내기</button></div>';
+}
+function bindFinal(){
+  if(S.phase==="thanks"){ const r=$("#again"); if(r) r.onclick=()=>{ resetAll(); }; const c=$("#copyRes"); if(c) c.onclick=()=>copyText(JSON.stringify(record(),null,0),c); return; }
+  document.querySelectorAll("[data-pref]").forEach(b=>b.onclick=()=>{ S.pref=b.dataset.pref; S.reason=$("#reason").value; render(); });
+  $("#reason").addEventListener("input",e=>{S.reason=e.target.value;});
+  $("#sendBtn").onclick=sendResult;
+}
+function record(){
+  const pos=S.pref; const ver=pos==="same"?"same":(pos==="first"?S.order[0]:S.order[1]);
+  const pm=v=>({seconds:S.metrics[v].ms!=null?Math.round(S.metrics[v].ms/100)/10:null,errorEvents:S.metrics[v].errorEvents||0,confirm:S.metrics[v].confirm||null});
+  return {createdAt:new Date().toISOString(),order:S.order.join(""),preferred:ver,preferredPosition:pos,reason:(S.reason||"").trim().slice(0,500),A:pm("A"),B:pm("B"),screen:window.innerWidth<=760?"mobile":"desktop"};
+}
+function sendResult(){
+  const rec=record(); S.record=rec;
+  track("ab_preference_submitted",{preferred:rec.preferred,preferred_position:rec.preferredPosition,reason:rec.reason,A_seconds:rec.A.seconds,B_seconds:rec.B.seconds,A_errors:rec.A.errorEvents,B_errors:rec.B.errorEvents,A_confirm:rec.A.confirm,B_confirm:rec.B.confirm});
+  S.save="ok"; S.phase="thanks"; render();
+}
+function thanksHTML(){
+  let st;
+  if(S.save==="ok") st='<div class="status ok">답변이 저장됐어요. 참여해 주셔서 감사해요!</div>';
+  else st='<div class="status warn">이 화면에서는 답변이 자동으로 저장되지 않았어요. 진행자에게 아래 내용을 전달해 주세요.<div class="code">'+esc(JSON.stringify(S.record))+'</div><button class="btn ghost" id="copyRes" style="margin-top:10px">내용 복사하기</button></div>';
+  return '<div class="card shellcard"><span class="tag">완료</span><h2 style="margin-top:12px">테스트가 끝났어요</h2>'+st+'<button class="btn ghost" id="again" style="margin-top:16px">새 참가자로 다시 시작</button></div>';
+}
+function copyText(t,btn){
+  const done=()=>{btn.textContent="복사했어요";};
+  try{ navigator.clipboard.writeText(t).then(done,()=>selectFallback()); }catch(e){ selectFallback(); }
+  function selectFallback(){ const c=document.querySelector(".code"); if(c){ const r=document.createRange(); r.selectNodeContents(c); const s=getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent="선택됨 · 길게 눌러 복사"; } }
+}
+function resetAll(){ S.phase="intro"; S.idx=0; S.pref=null; S.reason=""; S.save=null; S.metrics={A:{},B:{}}; render(); }
+
+$("#taskBtn").onclick=()=>{ S.taskOpen=!S.taskOpen; $("#taskPop").hidden=!S.taskOpen; $("#taskBtn").setAttribute("aria-expanded",String(S.taskOpen)); };
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&S.taskOpen){ $("#taskBtn").click(); } });
+render();
+})();
+</script>

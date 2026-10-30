@@ -1,4 +1,4 @@
-import { SurveyDefinition } from "./types";
+import { ChoiceOption, Question, SurveyDefinition } from "./types";
 
 // PRD F-01~F-04 통합 검증용 더미 설문: 2페이지, 단일/복수 선택, 필수 누락·이메일 형식
 // 오류, 최대 선택 개수 제한, '기타' 자유 입력을 모두 포함한다.
@@ -81,3 +81,35 @@ export const surveyDefinition: SurveyDefinition = {
     },
   ],
 };
+
+function shuffle<T>(items: T[]): T[] {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function shuffleQuestionOptions(question: Question): Question {
+  if (question.type !== "single" && question.type !== "multi") return question;
+  // '기타'(자유 입력)는 관례상 항상 마지막에 둔다. 나머지만 섞는다.
+  const fixed: ChoiceOption[] = question.options.filter((o) => o.hasOtherInput);
+  const movable: ChoiceOption[] = question.options.filter((o) => !o.hasOtherInput);
+  return { ...question, options: [...shuffle(movable), ...fixed] };
+}
+
+/**
+ * A/B 테스트에서 같은 참가자가 두 버전을 순서대로 체험할 때, 선택지 위치를
+ * 외워서 두 번째 버전을 기계적으로 더 빠르게 끝내는 학습효과(데이터 오염)를
+ * 줄이기 위해 매 노출마다 선택지 순서를 독립적으로 무작위화한 사본을 만든다.
+ */
+export function shuffleSurveyOptions(def: SurveyDefinition): SurveyDefinition {
+  return {
+    ...def,
+    pages: def.pages.map((page) => ({
+      ...page,
+      questions: page.questions.map(shuffleQuestionOptions),
+    })),
+  };
+}

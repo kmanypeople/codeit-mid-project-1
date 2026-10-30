@@ -27,6 +27,11 @@ export default function HomePage() {
 
           <StartSurveyLink />
 
+          {/* 정적 파일(public/ab-test.html)이라 클라이언트 라우팅 대신 일반 링크로 이동 */}
+          <a href="/ab-test.html" className={styles.abTestButton}>
+            A/B 사용성 테스트 체험하기
+          </a>
+
           <p className={styles.footnote}>
             이 설문은 오류 안내 · 진행도 · 선택 규칙 표시 · 제출 상태 안내를
             점검하기 위한 더미 데이터 검증용 데모입니다.

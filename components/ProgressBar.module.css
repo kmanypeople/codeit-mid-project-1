@@ -44,3 +44,20 @@
   border-radius: 999px;
   transition: width 0.25s ease;
 }
+
+/* AS-IS: 화면 최상단에 붙는 얇은 바. 라벨/숫자 없음 (낮은 시인성이 재현 대상) */
+.asIsTrack {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  height: 4px;
+  background: var(--asis-track-bg, #e3e7f5);
+  margin: 0 0 16px;
+}
+
+.asIsFill {
+  height: 100%;
+  width: 0%;
+  background: var(--asis-primary, #4285f4);
+  transition: width 0.25s ease;
+}

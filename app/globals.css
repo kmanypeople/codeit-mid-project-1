@@ -4,16 +4,23 @@
   --color-border: #e2e2e5;
   --color-text: #17171a;
   --color-text-muted: #6b6b70;
-  /* 와이어프레임 1차 전달: 흑백. primary 컬러 확정되면 이 3개 값만 바꾸면 됨 */
-  --color-primary: #17171a;
-  --color-primary-strong: #000000;
-  --color-primary-bg: #ededf0;
+  /* A/B 테스트에서 어느 쪽이 "새 디자인"인지 색만 보고 티나지 않도록
+     왈라 실제 브랜드 컬러(파랑)로 통일. A안(AS-IS)과 동일 톤. */
+  --color-primary: #4285f4;
+  --color-primary-strong: #2f68d6;
+  --color-primary-bg: #e8f0fe;
   --color-danger: #d1393f;
   --color-danger-bg: #fdecec;
   --color-success: #1f8a4c;
   --color-success-bg: #e8f7ee;
   --color-warning-bg: #fff6e0;
   --color-warning-text: #8a6100;
+  /* A/B 테스트 A안(AS-IS) 전용: 실제 왈라 제품 톤(파랑) 재현 */
+  --asis-primary: #4285f4;
+  --asis-primary-strong: #2f68d6;
+  --asis-track-bg: #e3e7f5;
+  /* 페이지 배경(--color-bg)과 또렷이 구분되는 옵션 행 배경 (실제 왈라 재현) */
+  --asis-row-bg: #ececef;
   --radius-sm: 8px;
   --radius-md: 14px;
   --radius-lg: 20px;

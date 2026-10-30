@@ -8,6 +8,13 @@ interface EndingScreenProps {
   surveyTitle: string;
   submittedAt: Date;
   onRestart: () => void;
+  /** A: AS-IS(기존 왈라) 재현 — 체크마크 + 한 줄 문구뿐, 정보 카드/버튼 없음. B: 개선안 */
+  variant?: "A" | "B";
+  /**
+   * A/B 테스트 하네스에서만 쓰인다: 제품 UI가 아니라 "다음 단계로" 진행하는
+   * 테스트 도구용 콜백. 있으면 닫기/이동 버튼이 이 콜백을 호출한다.
+   */
+  onFinish?: () => void;
 }
 
 function formatSubmittedAt(date: Date): string {
@@ -26,10 +33,45 @@ export default function EndingScreen({
   surveyTitle,
   submittedAt,
   onRestart,
+  variant = "B",
+  onFinish,
 }: EndingScreenProps) {
   useEffect(() => {
     track("completion_viewed", {});
   }, []);
+
+  if (variant === "A") {
+    return (
+      <>
+        <section
+          className={styles.asIsCard}
+          role="status"
+          aria-live="polite"
+        >
+          <div className={styles.asIsIconCircle} aria-hidden="true">
+            ✓
+          </div>
+          <p className={styles.asIsResultLine}>
+            응답이 성공적으로 제출되었습니다.
+          </p>
+        </section>
+        {onFinish && (
+          <div className={styles.harnessRow}>
+            <span className={styles.harnessHint}>
+              [테스트 도구] 실제 제품 화면이 아니에요
+            </span>
+            <button
+              type="button"
+              className={styles.harnessButton}
+              onClick={onFinish}
+            >
+              다음 단계로 진행
+            </button>
+          </div>
+        )}
+      </>
+    );
+  }
 
   return (
     <section className={styles.card} role="status" aria-live="polite">
@@ -53,11 +95,15 @@ export default function EndingScreen({
         <button
           type="button"
           className={styles.closeButton}
-          onClick={() => window.close()}
+          onClick={() => (onFinish ? onFinish() : window.close())}
         >
           닫기
         </button>
-        <button type="button" className={styles.homeButton} onClick={onRestart}>
+        <button
+          type="button"
+          className={styles.homeButton}
+          onClick={() => (onFinish ? onFinish() : onRestart())}
+        >
           처음 화면으로 이동
         </button>
       </div>

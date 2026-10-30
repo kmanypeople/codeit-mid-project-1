@@ -140,6 +140,149 @@
   font-weight: 700;
 }
 
+/* ===== AS-IS(A안) 재현 ===== */
+/* 핵심 재현 포인트: 단일/복수 선택이 동일한 체크마크로 보여 모양으로 구분되지 않는다 */
+
+/* 실제 왈라는 문항을 카드/테두리로 감싸지 않는다 — 여백과 회색 옵션 행만으로 구분 */
+.asIsCard {
+  background: transparent;
+  border: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  scroll-margin-top: 16px;
+}
+
+.asIsRequiredLabel {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--asis-primary);
+  margin: 0;
+}
+
+/* 최대 선택 개수 초과 시 '* 필수 입력' 자리를 대신한다 (실제 왈라 재현) */
+.asIsExceededLabel {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-danger);
+  margin: 0;
+}
+
+.asIsLabel {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--color-text);
+}
+
+.asIsOptionList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.asIsOptionRow {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 14px;
+  background: var(--asis-row-bg);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+
+.asIsOptionLabel {
+  font-size: 15px;
+  color: var(--color-text);
+}
+
+.asIsCheckmark {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.5px solid #c7cad4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #c7cad4;
+}
+
+.asIsCheckmarkOn {
+  border-color: var(--asis-primary);
+  background: var(--asis-primary);
+  color: #fff;
+}
+
+/* 단일 선택: 체크마크가 아니라 두꺼운 링(라디오) 모양으로 표시된다 */
+.asIsRadioIndicator {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.5px solid #c7cad4;
+  background: transparent;
+}
+
+.asIsRadioIndicatorOn {
+  border: 6px solid var(--asis-primary);
+  background: #fff;
+}
+
+.asIsOtherInput {
+  margin-top: 4px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.asIsTextInput {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 15px;
+}
+
+.asIsTextInputError {
+  border-color: var(--color-danger);
+}
+
+.asIsErrorText {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--color-danger);
+  font-size: 13px;
+  margin: 2px 0 0;
+}
+
+.asIsErrorIcon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+}
+
 .noticeText {
   display: flex;
   align-items: flex-start;

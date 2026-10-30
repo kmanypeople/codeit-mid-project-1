@@ -11,6 +11,8 @@ interface SubmitBarProps {
   onPrev: () => void;
   onNext: () => void;
   onSubmit: () => void;
+  /** A: AS-IS(기존 왈라) 재현 — 수정불가 안내/스피너/비활성 스타일 없음. B: 개선안 */
+  variant?: "A" | "B";
 }
 
 // F-04: 제출 중엔 반복 클릭을 막고, 확인된 실패는 답을 보존한 채 재시도를 준다.
@@ -23,25 +25,23 @@ export default function SubmitBar({
   onPrev,
   onNext,
   onSubmit,
+  variant = "B",
 }: SubmitBarProps) {
+  const primaryCls =
+    variant === "A" ? styles.asIsPrimaryButton : styles.primaryButton;
+  const secondaryCls =
+    variant === "A" ? styles.asIsSecondaryButton : styles.secondaryButton;
+
   if (!isLastPage) {
     return (
       <div className={styles.wrapper}>
         <div className={styles.buttonRow}>
           {!isFirstPage && (
-            <button
-              type="button"
-              className={styles.secondaryButton}
-              onClick={onPrev}
-            >
+            <button type="button" className={secondaryCls} onClick={onPrev}>
               이전
             </button>
           )}
-          <button
-            type="button"
-            className={styles.primaryButton}
-            onClick={onNext}
-          >
+          <button type="button" className={primaryCls} onClick={onNext}>
             다음
           </button>
         </div>
@@ -50,6 +50,49 @@ export default function SubmitBar({
   }
 
   const isSubmitting = submitStatus === "submitting";
+
+  if (variant === "A") {
+    return (
+      <div className={styles.wrapper}>
+        {submitStatus === "failed" && (
+          <div className={`${styles.statusBox} ${styles.failed}`} role="alert">
+            <span>제출에 실패했어요.</span>
+            <button type="button" className={styles.retryButton} onClick={onSubmit}>
+              다시 시도
+            </button>
+          </div>
+        )}
+        {submitStatus === "unknown" && (
+          <div className={`${styles.statusBox} ${styles.unknown}`} role="status">
+            <span>확인 중입니다…</span>
+            <button type="button" className={styles.retryButton} onClick={onSubmit}>
+              다시 제출
+            </button>
+          </div>
+        )}
+        <div className={styles.buttonRow}>
+          {!isFirstPage && (
+            <button
+              type="button"
+              className={secondaryCls}
+              onClick={onPrev}
+              disabled={isSubmitting}
+            >
+              이전
+            </button>
+          )}
+          <button
+            type="button"
+            className={primaryCls}
+            onClick={onSubmit}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "제출 중" : "응답 제출"}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.wrapper}>

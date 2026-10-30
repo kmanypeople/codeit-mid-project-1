@@ -1,0 +1,100 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.idInput {
+  flex: 1;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+}
+
+.idInput.hasError {
+  border-color: var(--color-danger);
+  border-width: 2px;
+  padding: 10px 11px;
+}
+
+.select {
+  flex: 1;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.customInput {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+}
+
+.customInput.hasError {
+  border-color: var(--color-danger);
+  border-width: 2px;
+  padding: 10px 11px;
+}
+
+.at {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+/* AS-IS 톤: 얇은 테두리, 각진 모서리 */
+.asIsRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.asIsIdInput {
+  flex: 1;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 15px;
+}
+
+.asIsIdInput.hasError {
+  border-color: var(--color-danger);
+}
+
+.asIsSelect {
+  flex: 1;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 14px;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.asIsCustomInput {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.asIsCustomInput.hasError {
+  border-color: var(--color-danger);
+}
