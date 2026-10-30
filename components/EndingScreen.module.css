@@ -1,0 +1,51 @@
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 36px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+}
+
+.iconCircle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+}
+
+.resultLine {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.subLine {
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.restartButton {
+  margin-top: 10px;
+  background: none;
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  border-radius: var(--radius-sm);
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.restartButton:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
