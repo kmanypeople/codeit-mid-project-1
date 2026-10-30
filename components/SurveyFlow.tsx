@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { surveyDefinition } from "@/lib/mockData";
 import { validatePage, validateQuestion } from "@/lib/validation";
 import { mockSubmit } from "@/lib/mockSubmit";
+import { track } from "@/lib/analytics";
 import {
   Answers,
   DemoOutcome,
@@ -43,6 +44,16 @@ export default function SurveyFlow() {
   const isFirstPage = pageIndex === 0;
   const isLastPage = pageIndex === totalPages - 1;
 
+  useEffect(() => {
+    // pageIndex가 바뀔 때만 기록한다. 제출 상태 전환(엔딩 화면은 completion_viewed로 별도 기록)은 제외.
+    track("page_viewed", {
+      page: currentPage.id,
+      page_number: pageIndex + 1,
+      total_pages: totalPages,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageIndex]);
+
   function registerFieldRef(questionId: string, el: HTMLDivElement | null) {
     fieldRefs.current[questionId] = el;
   }
@@ -54,8 +65,17 @@ export default function SurveyFlow() {
     el.focus();
   }
 
+  function handleJumpToError(questionId: string) {
+    track("button_clicked", { button: "jump_to_error", question_id: questionId });
+    jumpToQuestion(questionId);
+  }
+
   function clearErrorFor(questionId: string) {
+    const hadError = errors.some((e) => e.questionId === questionId);
     setErrors((prev) => prev.filter((e) => e.questionId !== questionId));
+    if (hadError) {
+      track("validation_resolved", { question_id: questionId });
+    }
   }
 
   function handleSingleSelect(questionId: string, optionId: string) {
@@ -119,15 +139,32 @@ export default function SurveyFlow() {
       return;
     }
     const error = validateQuestion(question, answer);
+    const hadError = errors.some((e) => e.questionId === questionId);
     setErrors((prev) => {
       const withoutThis = prev.filter((e) => e.questionId !== questionId);
       return error ? [...withoutThis, error] : withoutThis;
     });
+    if (error) {
+      track("validation_failed", {
+        page: currentPage.id,
+        question_id: questionId,
+        reason: error.reason,
+      });
+    } else if (hadError) {
+      track("validation_resolved", { question_id: questionId });
+    }
   }
 
   function runPageValidation(): FieldError[] {
     const pageErrors = validatePage(currentPage, answers);
     setErrors(pageErrors);
+    if (pageErrors.length > 0) {
+      track("validation_failed", {
+        page: currentPage.id,
+        error_count: pageErrors.length,
+        reasons: pageErrors.map((e) => e.reason),
+      });
+    }
     return pageErrors;
   }
 
@@ -139,6 +176,7 @@ export default function SurveyFlow() {
   }
 
   function goNext() {
+    track("button_clicked", { button: "next", page: currentPage.id });
     const pageErrors = runPageValidation();
     if (pageErrors.length > 0) {
       focusFirstError(pageErrors);
@@ -150,6 +188,7 @@ export default function SurveyFlow() {
   }
 
   function goPrev() {
+    track("button_clicked", { button: "prev", page: currentPage.id });
     setErrors([]);
     setMaxSelectNotices({});
     setPageIndex((i) => Math.max(i - 1, 0));
@@ -165,11 +204,19 @@ export default function SurveyFlow() {
   function submit() {
     if (submitStatus === "submitting") return; // 제출 연타 방지
 
+    const isRetry = submitStatus === "failed" || submitStatus === "unknown";
+    track("button_clicked", {
+      button: isRetry ? "retry" : "submit",
+      page: currentPage.id,
+    });
+
     const pageErrors = runPageValidation();
     if (pageErrors.length > 0) {
       focusFirstError(pageErrors);
       return;
     }
+
+    track("submit_attempted", { retry: isRetry, demo_outcome: demoOutcome });
 
     setSubmitStatus("submitting");
     submitSettledRef.current = false;
@@ -177,7 +224,9 @@ export default function SurveyFlow() {
 
     submitTimeoutRef.current = setTimeout(() => {
       if (!submitSettledRef.current) {
+        submitSettledRef.current = true;
         setSubmitStatus("unknown");
+        track("submit_status_unknown", {});
       }
     }, SUBMIT_TIMEOUT_MS);
 
@@ -187,16 +236,19 @@ export default function SurveyFlow() {
         submitSettledRef.current = true;
         clearSubmitTimeout();
         setSubmitStatus("success");
+        track("submit_succeeded", {});
       })
       .catch(() => {
         if (submitSettledRef.current) return;
         submitSettledRef.current = true;
         clearSubmitTimeout();
         setSubmitStatus("failed");
+        track("submit_failed", {});
       });
   }
 
   function restart() {
+    track("button_clicked", { button: "restart" });
     clearSubmitTimeout();
     submitSettledRef.current = true;
     setPageIndex(0);
@@ -220,7 +272,7 @@ export default function SurveyFlow() {
         <h1 className={styles.pageTitle}>{currentPage.title}</h1>
       </div>
 
-      <ErrorSummary errors={errors} onJumpTo={jumpToQuestion} />
+      <ErrorSummary errors={errors} onJumpTo={handleJumpToError} />
 
       <div className={styles.questionList}>
         {currentPage.questions.map((question) => (

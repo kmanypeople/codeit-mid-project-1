@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { track } from "@/lib/analytics";
 import styles from "./EndingScreen.module.css";
 
 interface EndingScreenProps {
@@ -8,6 +10,10 @@ interface EndingScreenProps {
 
 // F-04: 서버 저장 성공을 확인한 뒤에만 보여주며, 첫 문장이 결과를 알린다.
 export default function EndingScreen({ onRestart }: EndingScreenProps) {
+  useEffect(() => {
+    track("completion_viewed", {});
+  }, []);
+
   return (
     <section className={styles.card} role="status" aria-live="polite">
       <div className={styles.iconCircle} aria-hidden="true">

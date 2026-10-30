@@ -1,6 +1,7 @@
-import Link from "next/link";
 import styles from "./page.module.css";
 import { surveyDefinition } from "@/lib/mockData";
+import StartSurveyLink from "@/components/StartSurveyLink";
+import PageViewTracker from "@/components/PageViewTracker";
 
 export default function HomePage() {
   const pageCount = surveyDefinition.pages.length;
@@ -11,6 +12,7 @@ export default function HomePage() {
 
   return (
     <main className="page-shell">
+      <PageViewTracker page="intro" />
       <div className="page-shell__inner">
         <section className={styles.card}>
           <span className={styles.eyebrow}>왈라 설문 데모</span>
@@ -23,9 +25,7 @@ export default function HomePage() {
             <span className={styles.metaChip}>약 2분 소요</span>
           </div>
 
-          <Link href="/survey" className={styles.startButton}>
-            설문 시작하기
-          </Link>
+          <StartSurveyLink />
 
           <p className={styles.footnote}>
             이 설문은 오류 안내 · 진행도 · 선택 규칙 표시 · 제출 상태 안내를
