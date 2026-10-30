@@ -232,6 +232,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .B .q{border:1.5px solid transparent;border-radius:14px;padding:12px;margin:22px -12px 0}
 .B .q.bad{border-color:#F2A9A9;background:#FFF2F2}
 .B .req{font-size:12px;font-weight:500;color:var(--p-blue);margin-bottom:3px}
+.B .req.optl{color:var(--p-muted)}
 .B .title{display:block}
 .B .chip{display:inline-block;vertical-align:2px;margin-left:6px;font-size:11.5px;font-weight:700;background:var(--p-soft2);color:var(--p-fg);border-radius:99px;padding:3px 9px;white-space:nowrap;line-height:1.4}
 .B .err{font-size:13.5px;font-weight:500;color:var(--p-red);display:flex;gap:5px;align-items:center;margin-top:6px}
@@ -328,21 +329,35 @@ const ICON={chk:'<svg viewBox="0 0 12 12"><path d="M2 6.3l2.6 2.6L10 3.4" fill="
   big:'<svg viewBox="0 0 34 34"><path d="M7 17.5l7 7L27 11" stroke-linecap="round" stroke-linejoin="round"/></svg>'};
 
 /* ---------- survey definition (same content in A and B) ---------- */
-const SURVEY_NAME="동네 카페 이용 설문";
+const SURVEY_NAME="동네 카페 이용 경험 설문";
+const SURVEY_DESC="평소 동네 카페를 어떻게 이용하는지 알려 주세요. 더 나은 동네 카페 문화를 만드는 데 참고하려고 합니다. 정답은 없으니 편하게 응답해 주세요.";
+// Copied from the live Walla form. min/max = multi-select count rule (min===max means exactly that many).
+// required:false matches Walla, where only the recommendation text and the email are optional.
 const Q=[
  {id:"q1",page:1,type:"single",title:"동네 카페에 얼마나 자주 가나요?",opts:["거의 매일","주 3~4회","주 1~2회","월 2~3회","월 1회 이하"]},
- {id:"q2",page:1,type:"multi",max:2,title:"그날 카페에 간 목적과 가장 가까운 것을 골라 주세요.",opts:["혼자 업무나 공부를 하려고","음료만 포장하려고","친구나 가족과 대화하며 쉬려고","업무 미팅이나 모임을 하려고","기타"]},
- {id:"q3",page:1,type:"single",title:"가장 자주 가는 동네 카페는 어떤 곳인가요?",opts:["개인이 운영하는 카페","프랜차이즈 카페","둘 다 비슷하게 간다"]},
- {id:"q4",page:2,type:"multi",title:"그날 주문한 메뉴를 모두 골라 주세요.",opts:["아메리카노","라떼 등 우유가 들어간 커피","차","에이드·주스","디저트"]},
- {id:"q5",page:2,type:"email",title:"결과 안내를 받을 이메일을 입력해 주세요.",ph:"이메일 주소를 입력하세요."},
+ {id:"q2",page:1,type:"single",title:"가장 자주 가는 동네 카페는 어떤 곳인가요?",opts:["개인이 운영하는 카페","프랜차이즈 카페","둘 다 비슷하게 간다"]},
+ {id:"q3",page:1,type:"multi",min:2,max:2,title:"동네 카페에 주로 누구와 가나요?",opts:["혼자","친구","가족","연인","직장 동료","기타"]},
+ {id:"q4",page:1,type:"single",title:"동네 카페를 고를 때 가장 중요하게 보는 것은 무엇인가요?",opts:["집이나 직장에서 가깝다","커피 맛이 좋다","가격이 적당하고 쿠폰·적립 혜택이 있다","오래 머물며 작업하기 편하다","분위기가 좋고 조용하다"]},
+ {id:"q5",page:1,type:"single",title:"동네 카페에서 한 번에 보통 얼마를 쓰나요?",opts:["5천 원 미만","5천~1만 원","1만~2만 원","2만 원 이상"]},
+ {id:"q6",page:2,type:"multi",min:3,max:3,title:"주로 주문하는 메뉴를 모두 골라 주세요.",opts:["아메리카노","라떼 등 우유가 들어간 커피","차","에이드·주스","디저트","주문하지 않았다","기타"]},
+ {id:"q7",page:2,type:"multi",min:2,max:3,title:"주로 카페에 가는 목적과 가장 가까운 것을 모두 골라 주세요.",opts:["혼자 업무나 공부를 하려고","음료만 포장하려고","친구나 가족과 대화하며 쉬려고","업무 미팅이나 모임을 하려고","기타"]},
+ {id:"q8",page:2,type:"single",title:"주로 카페에 얼마나 머무르나요?",opts:["포장만 했다","30분 미만","30분~1시간","1~2시간","2시간 이상"]},
+ {id:"q9",page:2,type:"single",title:"가장 자주 가는 카페에 전반적으로 얼마나 만족하나요?",opts:["매우 불만족","불만족","보통","만족","매우 만족"]},
+ {id:"q10",page:2,type:"single",title:"그 카페에 다시 갈 생각이 있나요?",opts:["꼭 다시 간다","아마 다시 간다","잘 모르겠다","아마 안 간다","다시 안 간다"]},
+ {id:"q11",page:2,type:"text",required:false,title:"그 카페를 다른 사람에게 추천한다면 어떤 점을 말하고 싶나요?",ph:"추천하고 싶은 점을 적어주세요."},
+ {id:"q12",page:2,type:"multi",min:2,title:"새로 생긴 동네 카페는 주로 어떻게 알게 되나요?",opts:["지나가다 직접 봐서","지도 앱","인스타그램 등 SNS","지인 추천","동네 커뮤니티","기타"]},
+ {id:"q13",page:2,type:"single",title:"동네 카페의 쿠폰이나 멤버십을 쓰고 있나요?",opts:["종이 쿠폰을 쓴다","앱이나 전화번호 적립을 쓴다","둘 다 쓴다","쓰지 않는다"]},
+ {id:"q14",page:2,type:"single",title:"연령대를 알려 주세요.",opts:["10대","20대","30대","40대","50대 이상"]},
+ {id:"q15",page:2,type:"email",required:false,title:"설문 결과 요약을 받아보고 싶다면 이메일을 적어 주세요.",ph:"이메일 주소를 입력하세요."},
+ {id:"q16",page:2,type:"single",title:"응답 내용이 통계 목적으로만 쓰이는 데 동의합니다.",opts:["동의합니다","동의하지 않습니다"]},
 ];
+const isReq=q=>q.required!==false;
 const EMAIL_RE=/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const PREFILL="";
 
 /* ---------- state ---------- */
 const S={phase:"intro",order:["A","B"],idx:0,page:1,ans:null,attempted:{},errIdx:0,toast:false,submitting:false,submittedAt:null,
   metrics:{A:{},B:{}},pref:null,reason:"",save:null,confirmShown:false,taskOpen:false};
-function freshAnswers(){return {q1:null,q2:[],q3:null,q4:[],q5:PREFILL};}
+function freshAnswers(){const a={};Q.forEach(q=>{a[q.id]=q.type==="multi"?[]:(q.type==="single"?null:"");});return a;}
 const V=()=>S.order[S.idx];
 
 /* ---------- event hook (handoff) ----------
@@ -359,42 +374,67 @@ function errorsFor(page,ver){
   const out=[];
   for(const q of Q.filter(q=>q.page===page)){
     const a=S.ans[q.id];
-    if(q.type==="single"&&a==null) out.push({q:q.id,kind:"required"});
+    if(q.type==="single"&&a==null&&isReq(q)) out.push({q:q.id,kind:"required"});
     if(q.type==="multi"){
-      if(!a.length) out.push({q:q.id,kind:"required"});
+      if(!a.length){ if(isReq(q)) out.push({q:q.id,kind:"required"}); }
       else if(q.max&&a.length>q.max) out.push({q:q.id,kind:"max"});
+      else if(q.min&&a.length<q.min) out.push({q:q.id,kind:"min"});
     }
+    if(q.type==="text"&&!(a||"").trim()&&isReq(q)) out.push({q:q.id,kind:"required"});
     if(q.type==="email"){
       const v=(a||"").trim();
-      if(!v) out.push({q:q.id,kind:"required"});
+      if(!v){ if(isReq(q)) out.push({q:q.id,kind:"required"}); }
       else if(!EMAIL_RE.test(v)) out.push({q:q.id,kind:"email"});
     }
   }
   return out;
 }
+// "2개" / "2~3개" / "2개 이상" / "최대 3개"
+function countRule(q){
+  if(q.min&&q.max) return q.min===q.max?q.min+"개":q.min+"~"+q.max+"개";
+  if(q.min) return q.min+"개 이상";
+  if(q.max) return "최대 "+q.max+"개";
+  return "";
+}
 function msg(ver,q,kind){
   if(ver==="A"){
-    // Walla's own Korean strings (validation.maxSelection / invalidEmail / fieldRequired / minOneOption)
+    // Walla's own Korean strings (validation.maxSelection / minSelection / invalidEmail / fieldRequired / minOneOption)
     if(kind==="max") return "최대 선택 항목을 초과했습니다.";
+    if(kind==="min") return "최소 선택 항목을 충족하지 않습니다.";
     if(q.type==="email") return kind==="email"?"올바른 이메일 주소를 입력해주세요.":"이 문항을 채워주세요.";
+    if(q.type==="text") return "이 문항을 채워주세요.";
     return "최소 1개 옵션을 선택해주세요.";
   }
   if(q.type==="email") return kind==="email"?"올바른 이메일 형식이 아니에요.":"필수 문항이에요. 이메일을 입력해 주세요.";
-  if(q.type==="multi") return "필수 문항이에요. 하나 이상 선택해 주세요.";
+  if(q.type==="text") return "필수 문항이에요. 내용을 입력해 주세요.";
+  if(q.type==="multi"){
+    if(kind==="max") return countRule(q)+"까지 고를 수 있어요.";
+    if(!q.min) return "필수 문항이에요. 하나 이상 선택해 주세요.";
+    const pick=q.max?countRule(q)+"를":countRule(q);
+    if(kind==="min") return pick+" 골라 주세요. 지금 "+S.ans[q.id].length+"개 골랐어요.";
+    return "필수 문항이에요. "+pick+" 골라 주세요.";
+  }
   return "필수 문항이에요. 하나를 선택해 주세요.";
 }
-const answeredCount=()=>Q.filter(q=>{const a=S.ans[q.id];return q.type==="email"?EMAIL_RE.test((a||"").trim()):(Array.isArray(a)?a.length>0:a!=null);}).length;
+function isAnswered(q){
+  const a=S.ans[q.id];
+  if(q.type==="email") return EMAIL_RE.test((a||"").trim());
+  if(q.type==="text") return !!(a||"").trim();
+  if(Array.isArray(a)) return a.length>0&&(!q.min||a.length>=q.min)&&(!q.max||a.length<=q.max);
+  return a!=null;
+}
+const answeredCount=()=>Q.filter(isAnswered).length;
 
 /* ---------- tasks ---------- */
 const TASKS=[
- "1페이지: 1번과 3번에 답하세요.",
- "1페이지: 2번 문항에서 카페에 간 목적을 2개 고르세요.",
+ "1페이지: 하나만 고르는 문항(1·2·4·5번)에 답하세요.",
+ "1페이지: 3번 문항에서 함께 가는 사람을 2개 고르세요.",
  "2페이지: 아무것도 입력하지 말고 바로 제출 버튼을 누르세요. 문제가 생기면 고쳐서 제출하세요.",
  "제출이 완료됐는지 확인하세요."];
 function taskDone(){
   if(!S.ans) return [false,false,false,false];
   const m=S.metrics[V()]||{};
-  return [S.ans.q1!=null&&S.ans.q3!=null, S.ans.q2.length===2, !!S.submittedAt, !!m.confirm];
+  return [["q1","q2","q4","q5"].every(id=>S.ans[id]!=null), S.ans.q3.length===2, !!S.submittedAt, !!m.confirm];
 }
 function taskListHTML(){
   const d=S.phase==="survey"?taskDone():[0,0,0,0];
@@ -428,7 +468,7 @@ function refreshTasks(){
 /* ---------- intro ---------- */
 function introHTML(){
   return '<div class="card shellcard"><span class="tag">사용성 테스트</span><h2 style="margin-top:12px">두 가지 화면으로 같은 설문에 응답해 주세요</h2>'+
-  '<p>짧은 설문(2페이지, 5문항)에 두 번 응답해요. 화면 모양만 다르고 질문은 같아요. 각 버전을 시작하기 전에 해야 할 과업을 알려드려요.</p>'+
+  '<p>설문(2페이지, 16문항)에 두 번 응답해요. 화면 모양만 다르고 질문은 같아요. 각 버전을 시작하기 전에 해야 할 과업을 알려드려요.</p>'+
   '<p>설문에 입력한 답과 이메일은 저장되지 않아요. 마지막에 "어떤 버전이 더 사용하기 쉬웠나요?"에 대한 답과 걸린 시간만 저장돼요.</p>'+
   '<button class="btn" id="startBtn" style="margin-top:8px">테스트 시작하기</button></div>';
 }
@@ -448,7 +488,7 @@ function renderScreen(keep){
   if(S.submittedAt&&!S.submitting){
     h+='<div class="scroll" id="scroll">'+(ver==="A"?doneA():doneB())+'</div>';
   } else if(ver==="A"){
-    h+='<div class="bar"><b style="width:'+(S.page===1?40:85)+'%"></b></div><div class="scroll" id="scroll">'+pageHTML("A")+'</div>';
+    h+='<div class="bar"><b style="width:'+(S.page===1?50:100)+'%"></b></div><div class="scroll" id="scroll">'+pageHTML("A")+'</div>';
     h+='<div class="fnav">'+(S.page===1?'<button id="fNext" aria-label="다음 페이지">'+ICON.right+'</button>':'<button id="fPrev" aria-label="이전 페이지">'+ICON.left+'</button>')+'</div>';
     if(S.toast) h+='<div class="toast" role="alert"><span class="ic">!</span><div><b>유효하지 않은 입력이 있습니다.</b><small>문제가 있는 필드를 확인하세요</small></div><button id="goField">이동하기</button></div>';
   } else {
@@ -494,12 +534,12 @@ function shake(id){
 }
 function pageHTML(ver){
   let h='<div class="sv" id="sv">';
-  if(S.page===1) h+='<h2>'+SURVEY_NAME+'</h2><p class="desc">평소 동네 카페를 어떻게 이용하는지 알려 주세요. 정답은 없으니 편하게 응답해 주세요.</p>';
-  else h+='<h2>'+SURVEY_NAME+'</h2>';
+  if(S.page===1) h+='<h2>'+SURVEY_NAME+'</h2><p class="desc">'+SURVEY_DESC+'</p>';
+  else if(ver==="B") h+='<h2>'+SURVEY_NAME+'</h2>';
   const qs=Q.filter(q=>q.page===S.page);
   qs.forEach(q=>{ h+=ver==="A"?qA(q):qB(q); });
   if(ver==="A"){
-    h+=S.page===1?'<div class="next"><button class="nextbtn" id="nextBtn">Next →</button></div>':'<button class="submitbtn" id="submitBtn" '+(S.submitting?"disabled":"")+'>'+(S.submitting?"…":"응답 제출")+'</button>';
+    h+=S.page===1?'<div class="next"><button class="nextbtn" id="nextBtn">다음 →</button></div>':'<button class="submitbtn" id="submitBtn" '+(S.submitting?"disabled":"")+'>'+(S.submitting?"…":"응답 제출")+'</button>';
   } else {
     if(S.page===1) h+='<div class="next"><button class="nextbtn" id="nextBtn">다음 →</button></div>';
     else{
@@ -516,9 +556,9 @@ function pageHTML(ver){
 function qA(q){
   const e=qErr(q.id); const a=S.ans[q.id];
   let h='<div class="q'+(S.submitting?" dim":"")+'" id="Q-'+q.id+'">';
-  h+=(e?'<div class="err">'+esc(msg("A",q,e.kind))+'</div>':'<div class="req">* 필수 입력</div>')+'<p class="title">'+esc(q.title)+'</p>';
-  if(q.type==="email"){
-    h+='<input class="inp" id="email" type="email" inputmode="email" autocomplete="off" placeholder="'+q.ph+'" value="'+esc(a)+'" style="margin-top:16px">';
+  h+=(e?'<div class="err">'+esc(msg("A",q,e.kind))+'</div>':(isReq(q)?'<div class="req">* 필수 입력</div>':'<div></div>'))+'<p class="title">'+esc(q.title)+'</p>';
+  if(q.type==="email"||q.type==="text"){
+    h+=textInputHTML(q,"inp",a);
   } else {
     h+='<div class="opts" role="'+(q.type==="single"?"radiogroup":"group")+'">';
     q.opts.forEach((o,i)=>{
@@ -531,10 +571,10 @@ function qA(q){
 }
 function qB(q){
   const e=qErr(q.id); const a=S.ans[q.id];
-  let h='<div class="q'+(e?" bad":"")+(S.submitting?" dim":"")+'" id="Q-'+q.id+'"><div class="req">*필수 입력</div><p class="title">'+esc(q.title)+(q.type==="multi"?'<span class="chip">'+(q.max?"최대 "+q.max+"개 선택":"복수 선택")+'</span>':"")+'</p>';
+  let h='<div class="q'+(e?" bad":"")+(S.submitting?" dim":"")+'" id="Q-'+q.id+'">'+(isReq(q)?'<div class="req">*필수 입력</div>':'<div class="req optl">선택 입력</div>')+'<p class="title">'+esc(q.title)+(q.type==="multi"?'<span class="chip">'+(countRule(q)?countRule(q)+" 선택":"복수 선택")+'</span>':"")+'</p>';
   h+='<div class="errslot">'+(e?'<div class="err" role="alert">'+esc(msg("B",q,e.kind))+'</div>':"")+'</div>';
-  if(q.type==="email"){
-    h+='<input class="inp'+(e?" bad":"")+'" id="email" type="email" inputmode="email" autocomplete="off" placeholder="'+q.ph+'" value="'+esc(a)+'">';
+  if(q.type==="email"||q.type==="text"){
+    h+=textInputHTML(q,"inp"+(e?" bad":""),a);
   } else {
     const full=q.max&&a.length>=q.max;
     h+='<div class="opts" role="'+(q.type==="single"?"radiogroup":"group")+'">';
@@ -546,6 +586,10 @@ function qB(q){
     h+='</div>';
   }
   return h+'</div>';
+}
+function textInputHTML(q,cls,val){
+  const email=q.type==="email";
+  return '<input class="'+cls+'" data-text="'+q.id+'" type="'+(email?"email":"text")+'"'+(email?' inputmode="email"':'')+' autocomplete="off" placeholder="'+esc(q.ph)+'" value="'+esc(val)+'"'+(V()==="A"?' style="margin-top:16px"':'')+'>';
 }
 function doneA(){ return '<div class="done"><div class="ck">'+ICON.big+'</div><p>Your response has been<br>submitted successfully.</p></div>'; }
 function fmtTime(d){ const h=d.getHours(),m=String(d.getMinutes()).padStart(2,"0"); return d.getFullYear()+"."+String(d.getMonth()+1).padStart(2,"0")+"."+String(d.getDate()).padStart(2,"0")+" "+(h<12?"오전 ":"오후 ")+((h%12)||12)+":"+m; }
@@ -559,7 +603,7 @@ function bindScreen(){
   const sc=$("#screen");
   const go=$("#briefGo"); if(go) go.onclick=()=>{ S.brief=false; S.metrics[V()].t0=performance.now(); track("ab_version_started",{version:V(),position:S.idx+1}); renderScreen(); };
   sc.querySelectorAll(".opt").forEach(b=>b.addEventListener("click",()=>onOpt(b)));
-  const em=$("#email"); if(em) em.addEventListener("input",()=>{ S.ans.q5=em.value; liveRefresh(); });
+  sc.querySelectorAll("[data-text]").forEach(inp=>inp.addEventListener("input",()=>{ S.ans[inp.dataset.text]=inp.value; liveRefresh(inp.dataset.text); }));
   const nx=$("#nextBtn"); if(nx) nx.onclick=goNext;
   const fn=$("#fNext"); if(fn) fn.onclick=goNext;
   const fp=$("#fPrev"); if(fp) fp.onclick=()=>{ if(S.page===2){S.page=1;S.toast=false;renderScreen();} };
@@ -587,16 +631,16 @@ function onOpt(b){
   }
   renderScreen(true); refreshTasks();
 }
-function liveRefresh(){
-  // patch only what depends on the email field so the input keeps focus
+function liveRefresh(id){
+  // patch only what depends on this text field so the input keeps focus
   syncErrors();
   if(V()==="B"){
     const n=answeredCount(); const hb=document.querySelector(".hdr .top b"); if(hb) hb.textContent=n+" / "+Q.length;
     const tb=document.querySelector(".hdr .track b"); if(tb) tb.style.width=(n/Q.length*100)+"%";
   }
   if(!S.attempted[S.page]) return;
-  const q=Q.find(x=>x.id==="q5"); const e=qErr("q5"); const ver=V();
-  const box=$("#Q-q5"); const inp=$("#email");
+  const q=Q.find(x=>x.id===id); const e=qErr(id); const ver=V();
+  const box=$("#Q-"+id); const inp=box.querySelector("[data-text]");
   if(ver==="B"){
     box.classList.toggle("bad",!!e); inp.classList.toggle("bad",!!e);
     box.querySelector(".errslot").innerHTML=e?'<div class="err" role="alert">'+esc(msg("B",q,e.kind))+'</div>':"";
@@ -609,7 +653,8 @@ function liveRefresh(){
     // the error line takes the place of "* 필수 입력"
     const first=box.firstElementChild;
     if(e){ first.className="err"; first.textContent=msg("A",q,e.kind); }
-    else { first.className="req"; first.textContent="* 필수 입력"; }
+    else if(isReq(q)){ first.className="req"; first.textContent="* 필수 입력"; }
+    else { first.className=""; first.textContent=""; }
   }
 }
 function scrollToQ(id,smooth){
