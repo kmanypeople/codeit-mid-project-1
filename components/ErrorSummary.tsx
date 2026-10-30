@@ -3,31 +3,25 @@ import styles from "./ErrorSummary.module.css";
 
 interface ErrorSummaryProps {
   errors: FieldError[];
-  onJumpTo: (questionId: string) => void;
+  onNext: () => void;
 }
 
-// F-01: 오류가 여러 개면 상단에 개수와 문항명 목록을 두고, 누르면 해당 문항으로 이동한다.
-export default function ErrorSummary({ errors, onJumpTo }: ErrorSummaryProps) {
-  if (errors.length === 0) return null;
+// F-01 / 와이어프레임 '개선안 B·스낵바': 오류가 1개일 땐 문항 인라인 표시만으로
+// 충분해 스낵바를 띄우지 않는다. 2개 이상일 때만 개수 + '다음 오류' 이동 버튼을 보여준다.
+export default function ErrorSummary({ errors, onNext }: ErrorSummaryProps) {
+  if (errors.length < 2) return null;
 
   return (
     <div className={styles.box} role="alert" aria-live="assertive">
-      <p className={styles.heading}>
-        확인이 필요한 문항이 {errors.length}개 있어요
-      </p>
-      <ul className={styles.list}>
-        {errors.map((error) => (
-          <li key={error.questionId}>
-            <button
-              type="button"
-              className={styles.itemButton}
-              onClick={() => onJumpTo(error.questionId)}
-            >
-              {error.message}
-            </button>
-          </li>
-        ))}
-      </ul>
+      <span className={styles.icon} aria-hidden="true">
+        !
+      </span>
+      <span className={styles.text}>
+        답하지 않은 필수 문항 {errors.length}개
+      </span>
+      <button type="button" className={styles.nextButton} onClick={onNext}>
+        다음 오류 ›
+      </button>
     </div>
   );
 }

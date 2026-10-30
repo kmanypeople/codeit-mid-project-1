@@ -1,12 +1,13 @@
 :root {
-  --color-bg: #f7f7fb;
+  --color-bg: #f5f5f6;
   --color-surface: #ffffff;
-  --color-border: #e2e4ea;
-  --color-text: #1a1b23;
-  --color-text-muted: #666b78;
-  --color-primary: #4b47e5;
-  --color-primary-strong: #3a37c4;
-  --color-primary-bg: #edebff;
+  --color-border: #e2e2e5;
+  --color-text: #17171a;
+  --color-text-muted: #6b6b70;
+  /* 와이어프레임 1차 전달: 흑백. primary 컬러 확정되면 이 3개 값만 바꾸면 됨 */
+  --color-primary: #17171a;
+  --color-primary-strong: #000000;
+  --color-primary-bg: #ededf0;
   --color-danger: #d1393f;
   --color-danger-bg: #fdecec;
   --color-success: #1f8a4c;

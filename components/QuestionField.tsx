@@ -17,14 +17,13 @@ interface QuestionFieldProps {
   onFieldBlur: (questionId: string) => void;
 }
 
+// F-02 / 와이어프레임: 복수 선택이 가능한 문항에만 태그를 붙인다.
+// 단일 선택은 라디오(원형) 모양 자체로 구분되므로 배지를 쓰지 않는다.
 function badgeLabel(question: Question): string | null {
-  if (question.type === "single") return "1개 선택";
-  if (question.type === "multi") {
-    return question.maxSelect
-      ? `최대 ${question.maxSelect}개 선택`
-      : "여러 개 선택 가능";
-  }
-  return null;
+  if (question.type !== "multi") return null;
+  return question.maxSelect
+    ? `최대 ${question.maxSelect}개 선택`
+    : "복수 선택 가능";
 }
 
 export default function QuestionField({
@@ -60,8 +59,17 @@ export default function QuestionField({
         {badge && <span className={styles.badge}>{badge}</span>}
       </div>
 
-      {question.helperText && (
-        <p className={styles.helper}>{question.helperText}</p>
+      {error ? (
+        <p className={styles.errorText} role="alert">
+          <span className={styles.errorIcon} aria-hidden="true">
+            !
+          </span>
+          {error.message}
+        </p>
+      ) : (
+        question.helperText && (
+          <p className={styles.helper}>{question.helperText}</p>
+        )
       )}
 
       {question.type === "single" && (
@@ -156,12 +164,6 @@ export default function QuestionField({
           onChange={(e) => onTextChange(question.id, e.target.value)}
           onBlur={() => onFieldBlur(question.id)}
         />
-      )}
-
-      {error && (
-        <p className={styles.errorText} role="alert">
-          {error.message}
-        </p>
       )}
     </div>
   );

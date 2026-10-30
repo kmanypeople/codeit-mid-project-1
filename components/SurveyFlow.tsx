@@ -35,6 +35,8 @@ export default function SurveyFlow() {
   >({});
   const [submitStatus, setSubmitStatus] = useState<SubmitStatus>("idle");
   const [demoOutcome, setDemoOutcome] = useState<DemoOutcome>("random");
+  const [submittedAt, setSubmittedAt] = useState<Date | null>(null);
+  const [errorCursor, setErrorCursor] = useState(0);
 
   const fieldRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const submitSettledRef = useRef(true);
@@ -68,6 +70,14 @@ export default function SurveyFlow() {
   function handleJumpToError(questionId: string) {
     track("button_clicked", { button: "jump_to_error", question_id: questionId });
     jumpToQuestion(questionId);
+  }
+
+  // 와이어프레임 '다음 오류' 스낵바 버튼: 오류 문항을 순서대로 순환 이동한다.
+  function handleNextError() {
+    if (errors.length === 0) return;
+    const nextIndex = (errorCursor + 1) % errors.length;
+    setErrorCursor(nextIndex);
+    handleJumpToError(errors[nextIndex].questionId);
   }
 
   function clearErrorFor(questionId: string) {
@@ -158,6 +168,7 @@ export default function SurveyFlow() {
   function runPageValidation(): FieldError[] {
     const pageErrors = validatePage(currentPage, answers);
     setErrors(pageErrors);
+    setErrorCursor(0);
     if (pageErrors.length > 0) {
       track("validation_failed", {
         page: currentPage.id,
@@ -236,6 +247,7 @@ export default function SurveyFlow() {
         submitSettledRef.current = true;
         clearSubmitTimeout();
         setSubmitStatus("success");
+        setSubmittedAt(new Date());
         track("submit_succeeded", {});
       })
       .catch(() => {
@@ -255,12 +267,20 @@ export default function SurveyFlow() {
     setAnswers({});
     setOtherTexts({});
     setErrors([]);
+    setErrorCursor(0);
     setMaxSelectNotices({});
     setSubmitStatus("idle");
+    setSubmittedAt(null);
   }
 
-  if (submitStatus === "success") {
-    return <EndingScreen onRestart={restart} />;
+  if (submitStatus === "success" && submittedAt) {
+    return (
+      <EndingScreen
+        surveyTitle={surveyDefinition.title}
+        submittedAt={submittedAt}
+        onRestart={restart}
+      />
+    );
   }
 
   return (
@@ -271,8 +291,6 @@ export default function SurveyFlow() {
         <span className={styles.surveyTitle}>{surveyDefinition.title}</span>
         <h1 className={styles.pageTitle}>{currentPage.title}</h1>
       </div>
-
-      <ErrorSummary errors={errors} onJumpTo={handleJumpToError} />
 
       <div className={styles.questionList}>
         {currentPage.questions.map((question) => (
@@ -293,10 +311,13 @@ export default function SurveyFlow() {
         ))}
       </div>
 
+      <ErrorSummary errors={errors} onNext={handleNextError} />
+
       <SubmitBar
         isFirstPage={isFirstPage}
         isLastPage={isLastPage}
         submitStatus={submitStatus}
+        hasErrors={errors.length > 0}
         onPrev={goPrev}
         onNext={goNext}
         onSubmit={submit}

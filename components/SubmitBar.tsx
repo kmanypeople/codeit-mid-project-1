@@ -7,6 +7,7 @@ interface SubmitBarProps {
   isFirstPage: boolean;
   isLastPage: boolean;
   submitStatus: SubmitStatus;
+  hasErrors: boolean;
   onPrev: () => void;
   onNext: () => void;
   onSubmit: () => void;
@@ -18,6 +19,7 @@ export default function SubmitBar({
   isFirstPage,
   isLastPage,
   submitStatus,
+  hasErrors,
   onPrev,
   onNext,
   onSubmit,
@@ -68,6 +70,10 @@ export default function SubmitBar({
         </div>
       )}
 
+      {submitStatus === "idle" && (
+        <p className={styles.notice}>제출한 응답은 수정할 수 없어요.</p>
+      )}
+
       <div className={styles.buttonRow}>
         {!isFirstPage && (
           <button
@@ -81,11 +87,14 @@ export default function SubmitBar({
         )}
         <button
           type="button"
-          className={styles.primaryButton}
+          className={`${styles.primaryButton} ${
+            hasErrors && !isSubmitting ? styles.muted : ""
+          }`}
           onClick={onSubmit}
           disabled={isSubmitting}
         >
-          {isSubmitting ? "제출 중…" : "제출하기"}
+          {isSubmitting && <span className={styles.spinner} aria-hidden="true" />}
+          {isSubmitting ? "제출 중…" : "응답 제출하기"}
         </button>
       </div>
     </div>

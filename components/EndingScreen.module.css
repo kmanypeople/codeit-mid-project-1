@@ -23,29 +23,82 @@
 }
 
 .resultLine {
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 700;
   line-height: 1.5;
 }
 
-.subLine {
-  font-size: 14px;
-  color: var(--color-text-muted);
+.infoBox {
+  width: 100%;
+  margin: 0;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
 }
 
-.restartButton {
-  margin-top: 10px;
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13.5px;
+}
+
+.infoRow dt {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.infoRow dd {
+  margin: 0;
+  color: var(--color-text);
+  font-weight: 600;
+  text-align: right;
+}
+
+.actionRow {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.closeButton {
+  background: var(--color-primary);
+  border: none;
+  color: #fff;
+  border-radius: var(--radius-sm);
+  padding: 13px 16px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.closeButton:hover {
+  background: var(--color-primary-strong);
+}
+
+.homeButton {
   background: none;
   border: 1px solid var(--color-border);
   color: var(--color-text);
   border-radius: var(--radius-sm);
-  padding: 10px 18px;
-  font-size: 14px;
+  padding: 13px 16px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
 }
 
-.restartButton:hover {
+.homeButton:hover {
   border-color: var(--color-primary);
-  color: var(--color-primary);
+}
+
+.subLine {
+  font-size: 13px;
+  color: var(--color-text-muted);
 }

@@ -15,10 +15,10 @@ export default function ProgressBar({
   return (
     <div className={styles.wrapper}>
       <div className={styles.labelRow}>
-        <span className={styles.label}>
-          {currentPage} / {totalPages}페이지
+        <span className={styles.label}>진행률</span>
+        <span className={styles.value}>
+          {currentPage} / {totalPages}
         </span>
-        <span className={styles.unit}>페이지 단위로 갱신돼요</span>
       </div>
       <div
         className={styles.track}
@@ -26,7 +26,7 @@ export default function ProgressBar({
         aria-valuenow={currentPage}
         aria-valuemin={1}
         aria-valuemax={totalPages}
-        aria-label={`설문 진행도: ${currentPage}번째 / 전체 ${totalPages}페이지`}
+        aria-label={`설문 진행도: ${currentPage}번째 / 전체 ${totalPages}페이지 (페이지 단위로 갱신돼요)`}
       >
         <div className={styles.fill} style={{ width: `${percent}%` }} />
       </div>

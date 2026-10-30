@@ -20,10 +20,16 @@ export function validateQuestion(
   const empty = isEmpty(answer);
 
   if (question.required && empty) {
+    const message =
+      question.type === "single"
+        ? "필수 문항이에요. 하나를 선택해 주세요."
+        : question.type === "multi"
+          ? "필수 문항이에요. 하나 이상 선택해 주세요."
+          : "필수 문항이에요. 입력해 주세요.";
     return {
       questionId: question.id,
       reason: "required",
-      message: `'${question.label}'에 응답해주세요.`,
+      message,
     };
   }
 
@@ -32,7 +38,7 @@ export function validateQuestion(
       return {
         questionId: question.id,
         reason: "format",
-        message: "이메일 주소를 확인해주세요. 예: name@example.com",
+        message: "올바른 이메일 형식이 아니에요.",
       };
     }
   }
