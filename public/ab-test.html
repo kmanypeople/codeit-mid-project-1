@@ -435,7 +435,7 @@ function introHTML(){
 function bindIntro(){ $("#startBtn").onclick=()=>{ S.order=Math.random()<0.5?["A","B"]:["B","A"]; S.idx=0; track("ab_test_started"); startVersion(); }; }
 function startVersion(){
   S.phase="survey"; S.page=1; S.ans=freshAnswers(); S.attempted={}; S.toast=false; S.submitting=false; S.submittedAt=null; S.errIdx=0; S.confirmShown=false;
-  S.metrics[V()]={errorEvents:0}; S.brief=true; render();
+  S.metrics[V()]={errorEvents:0}; S.errAt={}; S.desel={}; S.brief=true; render();
 }
 
 /* ---------- survey screen ---------- */
@@ -464,6 +464,17 @@ function renderScreen(keep){
   if(keep) scrollEl.scrollTop=prevTop;
   bindScreen();
   updateFab();
+  syncErrors();
+}
+/* error shown → fixed: one ab_error_resolved per question, timed from when its message first appeared */
+function syncErrors(){
+  if(!S.ans||S.submittedAt) return;
+  const now=performance.now();
+  for(const q of Q.filter(q=>q.page===S.page)){
+    const e=qErr(q.id); const prev=S.errAt[q.id];
+    if(e&&!prev) S.errAt[q.id]={t:now,kind:e.kind};
+    else if(!e&&prev){ delete S.errAt[q.id]; track("ab_error_resolved",{version:V(),position:S.idx+1,question:q.id,kind:prev.kind,seconds_to_fix:Math.round((now-prev.t)/100)/10}); }
+  }
 }
 function briefHTML(){
   return '<div class="sheet"><div class="inner"><span class="lbl">테스트 안내 · 버전 '+(S.idx+1)+' / 2</span><h3>'+(S.idx===0?"이 화면에서 설문에 응답해 주세요":"이번에는 다른 화면으로 같은 설문에 응답해 주세요")+'</h3>'+taskListHTML()+'<button class="btn" id="briefGo">시작하기</button></div></div>';
@@ -567,7 +578,7 @@ function onOpt(b){
   if(q.type==="single") S.ans[q.id]=i;
   else{
     const a=S.ans[q.id]; const k=a.indexOf(i);
-    if(k>=0) a.splice(k,1);
+    if(k>=0){ a.splice(k,1); S.desel[q.id]=(S.desel[q.id]||0)+1; }
     else {
       if(ver==="B"&&q.max&&a.length>=q.max){ shake(q.id); track("ab_max_selection_exceeded",{version:ver,question:q.id}); return; }
       a.push(i);
@@ -578,6 +589,7 @@ function onOpt(b){
 }
 function liveRefresh(){
   // patch only what depends on the email field so the input keeps focus
+  syncErrors();
   if(V()==="B"){
     const n=answeredCount(); const hb=document.querySelector(".hdr .top b"); if(hb) hb.textContent=n+" / "+Q.length;
     const tb=document.querySelector(".hdr .track b"); if(tb) tb.style.width=(n/Q.length*100)+"%";
@@ -627,7 +639,9 @@ function submit(){
   setTimeout(()=>{
     S.submitting=false; S.submittedAt=new Date();
     const m=S.metrics[ver]; m.ms=Math.round(performance.now()-(m.t0||performance.now()));
-    track("ab_response_submitted",{version:ver,position:S.idx+1,seconds:Math.round(m.ms/100)/10,error_events:m.errorEvents||0});
+    // multi-select questions: final pick count and how often an option was unticked (counts only, no answer content)
+    const multi={}; Q.filter(q=>q.type==="multi").forEach(q=>{ multi[q.id+"_selected_count"]=S.ans[q.id].length; multi[q.id+"_deselect_count"]=S.desel[q.id]||0; });
+    track("ab_response_submitted",Object.assign({version:ver,position:S.idx+1,seconds:Math.round(m.ms/100)/10,error_events:m.errorEvents||0},multi));
     renderScreen(); refreshTasks();
     setTimeout(()=>{ if(S.phase==="survey"&&V()===ver&&!S.metrics[ver].confirm){ S.confirmShown=true; renderScreen(); } },1600);
   },ver==="A"?700:1200);
