@@ -108,7 +108,9 @@ var MIXPANEL_LIB_URL = 'https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js';
 mixpanel.init("5d520e0122e8f6a5fe1c4006d8d313a2", {
     autocapture: false,
     track_pageview: false,
-    persistence: "localStorage"
+    persistence: "localStorage",
+    // 세션 리플레이: 모든 참가자 화면을 녹화한다. 입력칸에 적은 내용은 SDK 기본값대로 가려진다.
+    record_sessions_percent: 100
 });
 </script>
 <title>응답 화면 A/B 테스트</title>
