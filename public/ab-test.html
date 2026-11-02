@@ -176,6 +176,10 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .btn.ghost{background:transparent;color:var(--fg);border:1.5px solid var(--line)}
 .btn:disabled{opacity:.5;cursor:default}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sheet .pcq .pct{margin:0 0 8px;font-size:15px;font-weight:700;line-height:1.45}
+.sheet .pick{margin:0;gap:8px}
+.sheet .pick button{padding:12px 14px;font-size:14.5px}
+.sheet .inner{max-height:calc(100% - 24px);overflow-y:auto}
 @media (min-width:768px){ .sheet{align-items:center;justify-content:center;padding:24px} .sheet .inner{max-width:480px;border-radius:20px;padding:26px 24px} }
 /* ---------- survey common ---------- */
 .sv{max-width:888px;margin:0 auto;padding:28px 20px 140px}
@@ -472,14 +476,15 @@ function refreshTasks(){
 /* ---------- intro ---------- */
 function introHTML(){
   return '<div class="card shellcard"><span class="tag">사용성 테스트</span><h2 style="margin-top:12px">두 가지 화면으로 같은 설문에 응답해 주세요</h2>'+
-  '<p>설문(2페이지, 16문항)에 두 번 응답해요. 화면 모양만 다르고 질문은 같아요. 각 버전을 시작하기 전에 해야 할 과업을 알려드려요.</p>'+
+  '<p>설문(2페이지, 16문항)에 두 번 응답해요. 화면 모양만 다르고 질문은 같아요. 해야 할 과업은 화면 위 "과업 보기"(넓은 화면에서는 왼쪽 카드)에서 확인할 수 있어요.</p>'+
   '<p>설문에 입력한 답과 이메일은 저장되지 않아요. 마지막에 "어떤 버전이 더 사용하기 쉬웠나요?"에 대한 답과 걸린 시간만 저장돼요.</p>'+
   '<button class="btn" id="startBtn" style="margin-top:8px">테스트 시작하기</button></div>';
 }
 function bindIntro(){ $("#startBtn").onclick=()=>{ S.order=Math.random()<0.5?["A","B"]:["B","A"]; S.idx=0; track("ab_test_started"); startVersion(); }; }
 function startVersion(){
   S.phase="survey"; S.page=1; S.ans=freshAnswers(); S.attempted={}; S.toast=false; S.submitting=false; S.submittedAt=null; S.errIdx=0; S.confirmShown=false;
-  S.metrics[V()]={errorEvents:0}; S.errAt={}; S.desel={}; S.brief=true; render();
+  S.metrics[V()]={errorEvents:0,pauseMs:0}; S.errAt={}; S.desel={}; S.pcShown=false; S.pc=null; render();
+  S.metrics[V()].t0=performance.now(); track("ab_version_started",{version:V(),position:S.idx+1});
 }
 
 /* ---------- survey screen ---------- */
@@ -501,7 +506,7 @@ function renderScreen(keep){
     h+='<div class="scroll" id="scroll">'+pageHTML("B")+'</div>';
     if(S.page===1) h+='<div class="fnav" id="fnavB"><button id="fPrev" aria-label="이전 페이지" disabled>'+ICON.left+'</button><button id="fNext" aria-label="다음 페이지">'+ICON.right+'</button></div>';
   }
-  if(S.brief) h+=briefHTML();
+  if(S.pc&&!S.pc.done) h+=progressCheckHTML();
   if(S.submittedAt&&!S.submitting&&S.confirmShown&&!S.metrics[ver].confirm) h+=confirmHTML();
   sc.innerHTML=h;
   scrollEl=$("#scroll");
@@ -520,8 +525,31 @@ function syncErrors(){
     else if(!e&&prev){ delete S.errAt[q.id]; track("ab_error_resolved",{version:V(),position:S.idx+1,question:q.id,kind:prev.kind,seconds_to_fix:Math.round((now-prev.t)/100)/10}); }
   }
 }
-function briefHTML(){
-  return '<div class="sheet"><div class="inner"><span class="lbl">테스트 안내 · 버전 '+(S.idx+1)+' / 2</span><h3>'+(S.idx===0?"이 화면에서 설문에 응답해 주세요":"이번에는 다른 화면으로 같은 설문에 응답해 주세요")+'</h3>'+taskListHTML()+'<button class="btn" id="briefGo">시작하기</button></div></div>';
+/* progress-bar comprehension check: shown once per version, right when page 2 opens */
+const PC_ANSWERS=[["1","1개"],["2","2개"],["3+","3개 이상"],["unknown","잘 모르겠어요"]];
+const PC_SOURCES=[["progress","화면 위 진행도 표시"],["number","문항 번호나 페이지"],["guess","그냥 짐작"]];
+function remainingCount(){ return Q.filter(q=>q.page===2).length; }
+function pcBucket(n){ return n<=1?"1":(n===2?"2":"3+"); }
+function progressCheckHTML(){
+  const grp=(key,title,opts)=>'<div class="pcq"><p class="pct">'+title+'</p><div class="pick">'+opts.map(o=>'<button aria-pressed="'+(S.pc[key]===o[0])+'" data-pc="'+key+'" data-v="'+o[0]+'">'+o[1]+'</button>').join("")+'</div></div>';
+  return '<div class="sheet"><div class="inner"><span class="lbl">테스트 질문 · 진행도</span>'+
+    grp("answer","Q1. 이 설문에서 남은 문항은 몇 개일까요?",PC_ANSWERS)+
+    grp("source","Q2. 무엇을 보고 답했나요?",PC_SOURCES)+
+    '<button class="btn" id="pcGo" '+(S.pc.answer&&S.pc.source?"":"disabled")+'>확인</button></div></div>';
+}
+function startProgressCheck(){
+  if(S.pcShown) return;
+  const ver=V(); const n=answeredCount();
+  S.pcShown=true;
+  S.pc={t:performance.now(),answer:null,source:null,answerMs:null,done:false,shown:ver==="A"?"bar_100%":(n+"/"+Q.length)};
+}
+function finishProgressCheck(){
+  const pc=S.pc; if(!pc||pc.done||!pc.answer||!pc.source) return;
+  const now=performance.now(); const m=S.metrics[V()];
+  pc.done=true; m.pauseMs=(m.pauseMs||0)+Math.round(now-pc.t);
+  const rem=remainingCount();
+  track("ab_progress_check",{version:V(),position:S.idx+1,answer:pc.answer,source:pc.source,correct:pc.answer===pcBucket(rem),remaining_actual:rem,progress_shown:pc.shown,ms_to_answer:pc.answerMs,ms_total:Math.round(now-pc.t)});
+  renderScreen(true);
 }
 function confirmHTML(){
   return '<div class="sheet"><div class="inner"><span class="lbl">테스트 질문 · 과업 4</span><h3>방금 응답이 제출됐나요?</h3><div class="row2"><button class="btn" data-conf="yes">네, 제출됐어요</button><button class="btn ghost" data-conf="unsure">잘 모르겠어요</button></div></div></div>';
@@ -575,7 +603,7 @@ function qA(q){
 }
 function qB(q){
   const e=qErr(q.id); const a=S.ans[q.id];
-  let h='<div class="q'+(e?" bad":"")+(S.submitting?" dim":"")+'" id="Q-'+q.id+'">'+(isReq(q)?'<div class="req">*필수 입력</div>':'<div class="req optl">선택 입력</div>')+'<p class="title">'+esc(q.title)+(q.type==="multi"?'<span class="chip">'+(countRule(q)?countRule(q)+" 선택":"복수 선택")+'</span>':"")+'</p>';
+  let h='<div class="q'+(e?" bad":"")+(S.submitting?" dim":"")+'" id="Q-'+q.id+'">'+(isReq(q)?'<div class="req">*필수 입력</div>':'<div class="req optl"></div>')+'<p class="title">'+esc(q.title)+(q.type==="multi"?'<span class="chip">'+(countRule(q)?countRule(q)+" 선택":"복수 선택")+'</span>':"")+'</p>';
   h+='<div class="errslot">'+(e?'<div class="err" role="alert">'+esc(msg("B",q,e.kind))+'</div>':"")+'</div>';
   if(q.type==="email"||q.type==="text"){
     h+=textInputHTML(q,"inp"+(e?" bad":""),a);
@@ -605,7 +633,8 @@ function doneB(){
 /* ---------- interactions ---------- */
 function bindScreen(){
   const sc=$("#screen");
-  const go=$("#briefGo"); if(go) go.onclick=()=>{ S.brief=false; S.metrics[V()].t0=performance.now(); track("ab_version_started",{version:V(),position:S.idx+1}); renderScreen(); };
+  sc.querySelectorAll("[data-pc]").forEach(b=>b.onclick=()=>{ S.pc[b.dataset.pc]=b.dataset.v; if(b.dataset.pc==="answer"&&S.pc.answerMs==null) S.pc.answerMs=Math.round(performance.now()-S.pc.t); renderScreen(true); });
+  const pg=$("#pcGo"); if(pg) pg.onclick=finishProgressCheck;
   sc.querySelectorAll(".opt").forEach(b=>b.addEventListener("click",()=>onOpt(b)));
   sc.querySelectorAll("[data-text]").forEach(inp=>inp.addEventListener("input",()=>{ S.ans[inp.dataset.text]=inp.value; liveRefresh(inp.dataset.text); }));
   const nx=$("#nextBtn"); if(nx) nx.onclick=goNext;
@@ -678,7 +707,7 @@ function goNext(){
   if(S.page!==1) return;
   S.attempted[1]=true; const errs=errorsFor(1,V());
   if(errs.length){ failed(errs); return; }
-  S.page=2; S.toast=false; track("ab_page_completed",{version:V(),page:1}); renderScreen(); if(scrollEl) scrollEl.scrollTop=0;
+  S.page=2; S.toast=false; track("ab_page_completed",{version:V(),page:1}); startProgressCheck(); renderScreen(); if(scrollEl) scrollEl.scrollTop=0;
 }
 function submit(){
   if(S.submitting) return;
@@ -688,7 +717,7 @@ function submit(){
   const ver=V();
   setTimeout(()=>{
     S.submitting=false; S.submittedAt=new Date();
-    const m=S.metrics[ver]; m.ms=Math.round(performance.now()-(m.t0||performance.now()));
+    const m=S.metrics[ver]; m.ms=Math.max(0,Math.round(performance.now()-(m.t0||performance.now()))-(m.pauseMs||0));
     // multi-select questions: final pick count and how often an option was unticked (counts only, no answer content)
     const multi={}; let deselTotal=0; Q.filter(q=>q.type==="multi").forEach(q=>{ multi[q.id+"_selected_count"]=S.ans[q.id].length; multi[q.id+"_deselect_count"]=S.desel[q.id]||0; deselTotal+=S.desel[q.id]||0; });
     track("ab_response_submitted",Object.assign({version:ver,position:S.idx+1,seconds:Math.round(m.ms/100)/10,error_events:m.errorEvents||0,count_rule_error:!!m.countRuleError,deselect_total:deselTotal},multi));

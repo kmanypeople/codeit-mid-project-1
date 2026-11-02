@@ -1,6 +1,6 @@
 # 인수인계 문서
 
-2026-11-01 기준으로, 로컬 Claude Code 세션에서 한 작업을 웹(claude.ai/code)에서 이어가기 위해 정리했다.
+2026-11-02 기준으로, 로컬 Claude Code 세션에서 한 작업을 웹(claude.ai/code)에서 이어가기 위해 정리했다.
 
 ## 프로젝트 목표
 
@@ -27,6 +27,7 @@ PRD 원문은 팀 내부 자료여서 공개 저장소에 넣지 않았다. 필�
 | `c57d1b9` | 오류 수정 시간과 복수 선택 개수·해제 횟수 로깅 추가 |
 | `1f72761` | 설문 내용을 실제 왈라 카페 설문(16문항)으로 교체 |
 | `acda41f` | 이벤트에 `survey_version` 태그 추가 |
+| (11-02) | 버전별 과업 안내 창 삭제(과업은 "과업 보기"·왼쪽 카드), 2페이지 진입 시 진행도 이해 질문(`ab_progress_check`) 추가, B안 선택 문항의 "선택 입력" 문구 삭제 |
 
 ## 현재 사이트
 
@@ -73,11 +74,12 @@ PRD 원문은 팀 내부 자료여서 공개 저장소에 넣지 않았다. 필�
 
 | 지표 | 보는 방법 |
 |---|---|
-| ① 설문 완료 시간 | `ab_response_submitted`의 `seconds` 중앙값 |
+| ① 설문 완료 시간 | `ab_response_submitted`의 `seconds` 중앙값. 설문 화면이 열린 때부터 재고, 진행도 질문 창에 머문 시간은 뺀다 |
 | ② 마지막 페이지 도달 대비 제출 완료율 | `ab_page_completed` 대비 `ab_response_submitted` 비율 |
 | ③ 오류 수정 시간 | `ab_error_resolved`의 `seconds_to_fix` 중앙값 |
 | ④ 선택 개수 오류를 본 응답 비율 | `ab_response_submitted`의 `count_rule_error` |
 | ⑤ 선택 해제 횟수 | 3·6·7·12번 문항의 해제 횟수 |
+| 진행도 이해 | `ab_progress_check`의 `correct` 비율(`position = 1`만), `ms_to_answer` 중앙값, `source`×`correct`. 리포트는 대시보드 텍스트 카드에 링크로 있다 |
 
 ### 지표를 다룰 때 주의할 점
 
@@ -88,10 +90,16 @@ PRD 원문은 팀 내부 자료여서 공개 저장소에 넣지 않았다. 필�
 - 5문항 시절의 결과는 대시보드 메모 카드에 남겨 두었다.
 - 숫자는 참가자 수로 함께 읽는다. 표본이 적을 때는 참고용으로만 쓴다.
 
+### 진행도 질문 (`ab_progress_check`)
+
+- 버전마다 2페이지가 열릴 때 한 번 "남은 문항은 몇 개일까요?"(`answer`: 1 / 2 / 3+ / unknown)와 "무엇을 보고 답했나요?"(`source`: progress / number / guess)를 묻는다.
+- 2페이지에 11문항이 남아 정답은 `3+`다. A안은 이때 진행률 막대가 100%(`progress_shown = bar_100%`), B안은 "5/16" 같은 답한 문항 수를 보여 준다.
+- 그 밖의 속성: `correct`, `remaining_actual`, `ms_to_answer`(첫 질문에 답할 때까지), `ms_total`(창이 떠 있던 시간).
+
 ### 이벤트 목록
 
 `ab_test_started`, `ab_version_started`, `ab_validation_error`, `ab_error_resolved`, `ab_max_selection_exceeded`,
-`ab_page_completed`, `ab_submit_confirmed`, `ab_response_submitted`, `ab_preference_submitted`
+`ab_page_completed`, `ab_progress_check`, `ab_submit_confirmed`, `ab_response_submitted`, `ab_preference_submitted`
 
 정의는 `public/ab-test.html`의 `track()` 호출을 기준으로 한다.
 
