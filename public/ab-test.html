@@ -240,6 +240,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .B .req{font-size:12px;font-weight:500;color:var(--p-blue);margin-bottom:3px}
 .B .req.optl{color:var(--p-muted)}
 .B .title{display:block}
+.B .qno{font-variant-numeric:tabular-nums;margin-right:2px}
 .B .chip{display:inline-block;vertical-align:2px;margin-left:6px;font-size:11.5px;font-weight:700;background:var(--p-soft2);color:var(--p-fg);border-radius:99px;padding:3px 9px;white-space:nowrap;line-height:1.4}
 .B .err{font-size:13.5px;font-weight:500;color:var(--p-red);display:flex;gap:5px;align-items:center;margin-top:6px}
 .B .err::before{content:"!";width:15px;height:15px;border-radius:50%;background:var(--p-red);color:#fff;font-size:10.5px;font-weight:700;display:grid;place-items:center;flex:none}
@@ -347,7 +348,7 @@ const Q=[
  {id:"q3",page:1,type:"multi",min:2,max:2,title:"동네 카페에 주로 누구와 가나요?",opts:["혼자","친구","가족","연인","직장 동료","기타"]},
  {id:"q4",page:1,type:"single",title:"동네 카페를 고를 때 가장 중요하게 보는 것은 무엇인가요?",opts:["집이나 직장에서 가깝다","커피 맛이 좋다","가격이 적당하고 쿠폰·적립 혜택이 있다","오래 머물며 작업하기 편하다","분위기가 좋고 조용하다"]},
  {id:"q5",page:1,type:"single",title:"동네 카페에서 한 번에 보통 얼마를 쓰나요?",opts:["5천 원 미만","5천~1만 원","1만~2만 원","2만 원 이상"]},
- {id:"q6",page:2,type:"multi",min:3,max:3,title:"주로 주문하는 메뉴를 모두 골라 주세요.",opts:["아메리카노","라떼 등 우유가 들어간 커피","차","에이드·주스","디저트","주문하지 않았다","기타"]},
+ {id:"q6",page:2,type:"multi",min:3,max:3,title:"주로 주문하는 메뉴를 모두 골라 주세요.",opts:["아메리카노","라떼 등 우유가 들어간 커피","차","에이드·주스","디저트","기타"]},
  {id:"q7",page:2,type:"multi",min:2,max:3,title:"주로 카페에 가는 목적과 가장 가까운 것을 모두 골라 주세요.",opts:["혼자 업무나 공부를 하려고","음료만 포장하려고","친구나 가족과 대화하며 쉬려고","업무 미팅이나 모임을 하려고","기타"]},
  {id:"q8",page:2,type:"single",title:"주로 카페에 얼마나 머무르나요?",opts:["포장만 했다","30분 미만","30분~1시간","1~2시간","2시간 이상"]},
  {id:"q9",page:2,type:"single",title:"가장 자주 가는 카페에 전반적으로 얼마나 만족하나요?",opts:["매우 불만족","불만족","보통","만족","매우 만족"]},
@@ -603,7 +604,7 @@ function qA(q){
 }
 function qB(q){
   const e=qErr(q.id); const a=S.ans[q.id];
-  let h='<div class="q'+(e?" bad":"")+(S.submitting?" dim":"")+'" id="Q-'+q.id+'">'+(isReq(q)?'<div class="req">*필수 입력</div>':'<div class="req optl"></div>')+'<p class="title">'+esc(q.title)+(q.type==="multi"?'<span class="chip">'+(countRule(q)?countRule(q)+" 선택":"복수 선택")+'</span>':"")+'</p>';
+  let h='<div class="q'+(e?" bad":"")+(S.submitting?" dim":"")+'" id="Q-'+q.id+'">'+(isReq(q)?'<div class="req">*필수 입력</div>':'<div class="req optl"></div>')+'<p class="title"><span class="qno">'+(Q.indexOf(q)+1)+'.</span> '+esc(q.title)+(q.type==="multi"?'<span class="chip">'+(countRule(q)?countRule(q)+" 선택":"복수 선택")+'</span>':"")+'</p>';
   h+='<div class="errslot">'+(e?'<div class="err" role="alert">'+esc(msg("B",q,e.kind))+'</div>':"")+'</div>';
   if(q.type==="email"||q.type==="text"){
     h+=textInputHTML(q,"inp"+(e?" bad":""),a);
