@@ -723,9 +723,11 @@ function submit(){
   if(errs.length){ failed(errs); return; }
   S.submitting=true; S.toast=false; renderScreen(true);
   const ver=V();
+  // Stop the clock at the submit click, so the fake sending delay (A 0.7s, B 1.2s) is not counted in `seconds`.
+  const mClick=S.metrics[ver]; const msAtClick=Math.max(0,Math.round(performance.now()-(mClick.t0||performance.now()))-(mClick.pauseMs||0));
   setTimeout(()=>{
     S.submitting=false; S.submittedAt=new Date();
-    const m=S.metrics[ver]; m.ms=Math.max(0,Math.round(performance.now()-(m.t0||performance.now()))-(m.pauseMs||0));
+    const m=S.metrics[ver]; m.ms=msAtClick;
     // multi-select questions: final pick count and how often an option was unticked (counts only, no answer content)
     const multi={}; let deselTotal=0; Q.filter(q=>q.type==="multi").forEach(q=>{ multi[q.id+"_selected_count"]=S.ans[q.id].length; multi[q.id+"_deselect_count"]=S.desel[q.id]||0; deselTotal+=S.desel[q.id]||0; });
     track("ab_response_submitted",Object.assign({version:ver,position:S.idx+1,seconds:Math.round(m.ms/100)/10,error_events:m.errorEvents||0,count_rule_error:!!m.countRuleError,deselect_total:deselTotal},multi));
