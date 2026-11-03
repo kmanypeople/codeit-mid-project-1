@@ -130,3 +130,4 @@ PRD 원문은 팀 내부 자료여서 공개 저장소에 넣지 않았다. 필�
 - **응답 시간(`seconds`)**: 제출 버튼을 누른 순간에 멈춘다. 이전에는 제출 로딩(A 0.7초, B 1.2초)까지 포함돼 B가 약 0.5초 길게 기록됐다.
 - **A·B 오류 비교 원칙**: 두 화면에 모두 있는 required·min·email 오류끼리만 비교한다. max 오류는 A에만 있다(B는 선택이 막힘). `ab_max_selection_exceeded`는 A에서는 오류, B에서는 막힌 클릭이다.
 - Claude 대시보드(전체 지표 한 화면): https://claude.ai/artifact/4votSyqe4XGesJcg2Jqk78
+- **버전 순서 맞추기**: `/ab-test.html?order=AB`(A 먼저), `/ab-test.html?order=BA`(B 먼저) 링크로 순서를 정한다. 링크에 순서가 없으면 그 기기에서 직전 순서와 반대로 시작하고, 기기의 첫 실행만 무작위다. 모든 이벤트에 `order_method`(link / alternate / random)가 붙는다. 11월 3일 기준 끝까지 응답한 참가자는 AB 8명, BA 16명이었다.

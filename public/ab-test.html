@@ -379,7 +379,7 @@ const V=()=>S.order[S.idx];
    Every measurable moment calls track(). If Mixpanel is on the page (window.mixpanel), events go there.
    A React/Next.js wrapper can also listen: window.addEventListener("abtest:event", e => mixpanel.track(e.detail.name, e.detail.props)). */
 function track(name,props){
-  const p=Object.assign({survey_version:SURVEY_VERSION,task_guide:SHOW_TASKS?"shown":"hidden",ab_order:S.order.join(""),screen:window.innerWidth<=760?"mobile":"desktop"},IS_TEAM?{tester:"team"}:{},props||{});
+  const p=Object.assign({survey_version:SURVEY_VERSION,task_guide:SHOW_TASKS?"shown":"hidden",ab_order:S.order.join(""),order_method:S.orderHow||null,screen:window.innerWidth<=760?"mobile":"desktop"},IS_TEAM?{tester:"team"}:{},props||{});
   try{ if(window.mixpanel&&typeof window.mixpanel.track==="function") window.mixpanel.track(name,p); }catch(e){}
   try{ window.dispatchEvent(new CustomEvent("abtest:event",{detail:{name:name,props:p}})); }catch(e){}
 }
@@ -488,7 +488,19 @@ function introHTML(){
   '<p>설문에 입력한 답과 이메일은 저장되지 않아요. 마지막에 "어떤 버전이 더 사용하기 쉬웠나요?"에 대한 답과 걸린 시간만 저장돼요.</p>'+
   '<button class="btn" id="startBtn" style="margin-top:8px">테스트 시작하기</button></div>';
 }
-function bindIntro(){ $("#startBtn").onclick=()=>{ S.order=Math.random()<0.5?["A","B"]:["B","A"]; S.idx=0; track("ab_test_started"); startVersion(); }; }
+/* Version order. ?order=AB or ?order=BA fixes it, so the team can send the two links alternately and keep AB/BA even.
+   Without it, a device alternates from its last run (useful when one device is passed between participants);
+   a device's first run is random. Sent as order_method (link / alternate / random) on every event. */
+const ORDER_KEY="abtest_last_order";
+function pickOrder(){
+  let q=""; try{ q=(new URLSearchParams(location.search).get("order")||"").toUpperCase(); }catch(e){}
+  if(q==="AB"||q==="BA") return {order:q.split(""),how:"link"};
+  let last=null; try{ last=localStorage.getItem(ORDER_KEY); }catch(e){}
+  if(last==="AB") return {order:["B","A"],how:"alternate"};
+  if(last==="BA") return {order:["A","B"],how:"alternate"};
+  return {order:Math.random()<0.5?["A","B"]:["B","A"],how:"random"};
+}
+function bindIntro(){ $("#startBtn").onclick=()=>{ const pk=pickOrder(); S.order=pk.order; S.orderHow=pk.how; try{ localStorage.setItem(ORDER_KEY,S.order.join("")); }catch(e){} S.idx=0; track("ab_test_started"); startVersion(); }; }
 function startVersion(){
   S.phase="survey"; S.page=1; S.ans=freshAnswers(); S.attempted={}; S.toast=false; S.submitting=false; S.submittedAt=null; S.errIdx=0; S.confirmShown=false;
   S.metrics[V()]={errorEvents:0,pauseMs:0}; S.errAt={}; S.desel={}; S.pcShown=false; S.pc=null; render();
