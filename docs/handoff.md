@@ -122,3 +122,11 @@ PRD 원문은 팀 내부 자료여서 공개 저장소에 넣지 않았다. 필�
 
 - PRD 원문과 와이어프레임, 개선안 디자인(Figma), 왈라 화면 녹화는 저장소에 없다.
 - GA4 서비스 계정 키는 로컬 Mac에만 있다. 이번 프로젝트의 측정은 Mixpanel로 한다.
+
+## 2026-11-03 추가
+
+- **팀원 모드**: `/ab-test.html?team=1`로 한 번 열면 그 기기의 모든 이벤트에 `tester: "team"`이 붙고 상단에 "· 팀원 모드"가 보인다. `?team=0`으로 해제한다. 대시보드는 `tester` is not set으로 거른다.
+- **팀원 기기 10대**(5명 × 데스크톱·폰)는 Mixpanel 대시보드 필터와 Claude 대시보드에서 `$distinct_id`로 뺀다.
+- **응답 시간(`seconds`)**: 제출 버튼을 누른 순간에 멈춘다. 이전에는 제출 로딩(A 0.7초, B 1.2초)까지 포함돼 B가 약 0.5초 길게 기록됐다.
+- **A·B 오류 비교 원칙**: 두 화면에 모두 있는 required·min·email 오류끼리만 비교한다. max 오류는 A에만 있다(B는 선택이 막힘). `ab_max_selection_exceeded`는 A에서는 오류, B에서는 막힌 클릭이다.
+- Claude 대시보드(전체 지표 한 화면): https://claude.ai/artifact/4votSyqe4XGesJcg2Jqk78
