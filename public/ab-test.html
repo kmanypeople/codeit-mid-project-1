@@ -341,6 +341,10 @@ const SURVEY_NAME="동네 카페 이용 경험 설문";
 const SURVEY_VERSION="cafe16";
 // false = participants get no task list (no "과업 보기" button, no side card). Sent as task_guide on every event.
 const SHOW_TASKS=false;
+// Team members open the page once with ?team=1 (?team=0 undoes it). That device then sends tester:"team" on every event,
+// so dashboards can leave team test runs out. Participants never see or send it.
+const TEAM_KEY="abtest_team";
+const IS_TEAM=(()=>{ try{ const q=new URLSearchParams(location.search).get("team"); if(q==="1") localStorage.setItem(TEAM_KEY,"1"); if(q==="0") localStorage.removeItem(TEAM_KEY); return localStorage.getItem(TEAM_KEY)==="1"; }catch(e){ return false; } })();
 const SURVEY_DESC="평소 동네 카페를 어떻게 이용하는지 알려 주세요. 더 나은 동네 카페 문화를 만드는 데 참고하려고 합니다. 정답은 없으니 편하게 응답해 주세요.";
 // Copied from the live Walla form. min/max = multi-select count rule (min===max means exactly that many).
 // required:false matches Walla, where only the recommendation text and the email are optional.
@@ -375,7 +379,7 @@ const V=()=>S.order[S.idx];
    Every measurable moment calls track(). If Mixpanel is on the page (window.mixpanel), events go there.
    A React/Next.js wrapper can also listen: window.addEventListener("abtest:event", e => mixpanel.track(e.detail.name, e.detail.props)). */
 function track(name,props){
-  const p=Object.assign({survey_version:SURVEY_VERSION,task_guide:SHOW_TASKS?"shown":"hidden",ab_order:S.order.join(""),screen:window.innerWidth<=760?"mobile":"desktop"},props||{});
+  const p=Object.assign({survey_version:SURVEY_VERSION,task_guide:SHOW_TASKS?"shown":"hidden",ab_order:S.order.join(""),screen:window.innerWidth<=760?"mobile":"desktop"},IS_TEAM?{tester:"team"}:{},props||{});
   try{ if(window.mixpanel&&typeof window.mixpanel.track==="function") window.mixpanel.track(name,p); }catch(e){}
   try{ window.dispatchEvent(new CustomEvent("abtest:event",{detail:{name:name,props:p}})); }catch(e){}
 }
@@ -454,9 +458,10 @@ function taskListHTML(){
 
 /* ---------- shell render ---------- */
 function stepText(){
-  if(S.phase==="intro") return "시작 전";
-  if(S.phase==="final"||S.phase==="thanks") return "마지막 질문";
-  return "버전 "+(S.idx+1)+" / 2";
+  const team=IS_TEAM?" · 팀원 모드":"";
+  if(S.phase==="intro") return "시작 전"+team;
+  if(S.phase==="final"||S.phase==="thanks") return "마지막 질문"+team;
+  return "버전 "+(S.idx+1)+" / 2"+team;
 }
 function render(){
   $("#stepLabel").textContent=stepText();
